@@ -98,7 +98,7 @@ function CartRow({
 
   return (
     <div className="group flex flex-col gap-4 rounded-2xl border border-border bg-white p-4 transition-all hover:border-charcoal-soft/30 hover:shadow-md sm:flex-row sm:items-center sm:p-5">
-      <div className="flex flex-1 items-center gap-4">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
         <div className="relative flex h-18 w-18 shrink-0 items-center justify-center rounded-xl bg-surface sm:h-20 sm:w-20">
           <Icon className="h-9 w-9 text-slate" />
           {item.weightClass === "Heavy" && (
@@ -107,8 +107,8 @@ function CartRow({
             </span>
           )}
         </div>
-        <div className="flex flex-col gap-1.5">
-          <h3 className="text-sm font-semibold text-black">{item.name}</h3>
+        <div className="min-w-0 flex flex-col gap-1.5">
+          <h3 className="truncate text-sm font-semibold text-black">{item.name}</h3>
           <p className="text-xs text-muted">Sold by {item.seller}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted">
             <span className="inline-flex items-center gap-1">
@@ -122,13 +122,13 @@ function CartRow({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6">
+      <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-6">
         <QuantityStepper
           quantity={item.quantity}
           max={item.stock}
           onChange={(next) => onQuantityChange(item.id, next)}
         />
-        <p className="w-20 text-right text-sm font-semibold text-black">
+        <p className="w-16 shrink-0 text-right text-sm font-semibold text-black sm:w-20">
           ${(item.price * item.quantity).toFixed(2)}
         </p>
         <button
@@ -230,7 +230,7 @@ export default function CartPage() {
               ))}
             </div>
 
-            <aside className="w-full shrink-0 rounded-2xl border border-border bg-white p-6 shadow-sm lg:sticky lg:top-6 lg:w-80">
+            <aside className="w-full shrink-0 rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-6 lg:sticky lg:top-6 lg:w-80">
               <h2 className="text-base font-semibold text-black">Order Summary</h2>
 
               <div className="mt-4 flex flex-col gap-2 text-sm">

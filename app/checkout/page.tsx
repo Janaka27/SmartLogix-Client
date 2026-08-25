@@ -61,8 +61,8 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-white p-6 shadow-sm">
-      <div className="flex items-center gap-3">
+    <section className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-6">
+      <div className="flex items-start gap-3 sm:items-center">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-charcoal text-white">
           {icon}
         </div>
@@ -270,7 +270,7 @@ export default function CheckoutPage() {
             </SectionCard>
           </div>
 
-          <aside className="w-full shrink-0 rounded-2xl border border-border bg-white p-6 shadow-sm lg:sticky lg:top-6 lg:w-80">
+          <aside className="w-full shrink-0 rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-6 lg:sticky lg:top-6 lg:w-80">
             <h2 className="text-base font-semibold text-black">Order Summary</h2>
             <p className="mt-0.5 text-xs text-muted">{itemCount} item(s)</p>
 

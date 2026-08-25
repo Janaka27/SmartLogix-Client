@@ -130,8 +130,8 @@ export default function PreferencesPage() {
           Update your account details and delivery preferences.
         </p>
 
-        <section className="mt-8 rounded-2xl border border-border bg-white p-6">
-          <div className="flex items-center gap-4">
+        <section className="mt-8 rounded-2xl border border-border bg-white p-4 sm:p-6">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface">
               <span className="text-lg font-semibold text-slate">
                 {profile.fullName
@@ -171,7 +171,7 @@ export default function PreferencesPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-border bg-white p-6">
+        <section className="mt-6 rounded-2xl border border-border bg-white p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-black">Default Delivery Address</h2>
           <p className="mt-1 text-xs text-muted">
             Used to check drone range and estimate delivery time at checkout.
@@ -193,7 +193,7 @@ export default function PreferencesPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-border bg-white p-6">
+        <section className="mt-6 rounded-2xl border border-border bg-white p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-black">Notifications</h2>
           <div className="mt-2 divide-y divide-border">
             <Toggle
@@ -217,7 +217,7 @@ export default function PreferencesPage() {
           </div>
         </section>
 
-        <div className="mt-8 flex items-center gap-3">
+        <div className="mt-8 flex flex-wrap items-center gap-3">
           <button
             type="submit"
             className="rounded-full bg-black px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-charcoal"

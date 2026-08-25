@@ -290,7 +290,7 @@ function Navbar({
   const router = useRouter();
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-2">
           <DroneIcon className="h-6 w-6 text-black" />
           <span className="text-lg font-semibold tracking-tight text-black">
@@ -303,14 +303,14 @@ function Navbar({
           <a href="#" className="hover:text-black">Track Order</a>
         </nav>
         <div className="flex items-center gap-3 sm:gap-4">
-          <button aria-label="Search" className="text-slate hover:text-black">
+          <button aria-label="Search" className="shrink-0 text-slate hover:text-black">
             <SearchIcon className="h-5 w-5" />
           </button>
           
           <button
             ref={cartButtonRef}
             aria-label="Cart"
-            className={`relative text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
+            className={`relative shrink-0 text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
           >
             <CartIcon className="h-5 w-5" />
             <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
@@ -321,7 +321,7 @@ function Navbar({
           {isLoggedIn ? (
             <ProfileMenu onLogout={onLogout} />
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-3 sm:flex">
               <button
                 onClick={onSignIn}
                 className="rounded-full border border-border bg-white px-4 py-1.5 text-sm font-medium text-slate hover:text-black hover:bg-surface transition-colors"
@@ -355,7 +355,7 @@ function Hero({
         <DroneIcon className="absolute right-10 top-8 h-10 w-10 text-white/30 sm:right-24 sm:top-12" />
         <DroneIcon className="absolute left-10 bottom-10 h-6 w-6 text-white/20 sm:left-32" />
         <h1
-          className="absolute inset-0 flex select-none items-center justify-center overflow-hidden text-[5.5rem] font-extrabold leading-none text-transparent sm:text-[9rem]"
+          className="absolute inset-0 flex select-none items-center justify-center overflow-hidden text-6xl font-extrabold leading-none text-transparent sm:text-8xl md:text-[9rem]"
           style={{ WebkitTextStroke: "2px rgba(255,255,255,0.5)" }}
           aria-hidden
         >
