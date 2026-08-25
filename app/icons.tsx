@@ -180,6 +180,79 @@ export function ChevronDownIcon(props: IconProps) {
   );
 }
 
+export function MapPinIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21Z" />
+      <circle cx="12" cy="9.5" r="2.4" />
+    </svg>
+  );
+}
+
+export function CheckCircleIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8.2 12.3 2.6 2.6 5-5.4" />
+    </svg>
+  );
+}
+
+export function CreditCardIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="2.5" y="5.5" width="19" height="13" rx="2.2" />
+      <path d="M2.5 10h19M6 14.5h4" />
+    </svg>
+  );
+}
+
+export function CashIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="2.5" y="6.5" width="19" height="11" rx="2" />
+      <circle cx="12" cy="12" r="2.6" />
+      <path d="M5.5 6.5v11M18.5 6.5v11" />
+    </svg>
+  );
+}
+
+export function LocationCrosshairIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+    </svg>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 7h16M9 7V4.8c0-.4.4-.8.9-.8h4.2c.5 0 .9.4.9.8V7M18 7l-.8 12.2a2 2 0 0 1-2 1.8H8.8a2 2 0 0 1-2-1.8L6 7" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}
+
+export function LockIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </svg>
+  );
+}
+
+export function TagIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M11.5 3.5H6a2 2 0 0 0-2 2v5.5l9.6 9.6a1.5 1.5 0 0 0 2.1 0l5.4-5.4a1.5 1.5 0 0 0 0-2.1Z" />
+      <circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function XSocialIcon(props: IconProps) {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" {...props}>

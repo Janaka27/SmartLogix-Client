@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import {
   CameraIcon,
@@ -290,6 +291,7 @@ function Navbar({
   cartCount: number;
   cartBump: boolean;
 }) {
+  const router = useRouter();
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
@@ -308,20 +310,23 @@ function Navbar({
           <button aria-label="Search" className="text-slate hover:text-black">
             <SearchIcon className="h-5 w-5" />
           </button>
-          
-          <button
-            ref={cartButtonRef}
-            aria-label="Cart"
-            className={`relative text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
-          >
-            <CartIcon className="h-5 w-5" />
-            <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
-              {cartCount}
-            </span>
-          </button>
-          
-          {showAuthButtons ? (
-            <div className="flex items-center gap-3">
+          {isLoggedIn ? (
+            <>
+              <button
+                ref={cartButtonRef}
+                onClick={() => router.push("/cart")}
+                aria-label="Cart"
+                className={`relative text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
+              >
+                <CartIcon className="h-5 w-5" />
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                  {cartCount}
+                </span>
+              </button>
+              <ProfileMenu onLogout={onLogout} />
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
               <button
                 onClick={onSignIn}
                 className="rounded-full border border-border bg-white px-4 py-1.5 text-sm font-medium text-slate hover:text-black hover:bg-surface transition-colors"
