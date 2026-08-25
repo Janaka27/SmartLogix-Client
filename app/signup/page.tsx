@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { DroneIcon } from "../icons";
 
 function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -52,15 +51,11 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // Success / Error States
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  
   // Validation States
   const [nameError, setNameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -73,7 +68,6 @@ export default function SignupPage() {
     setEmailError(null);
     setPasswordError(null);
     setConfirmPasswordError(null);
-    setError(null);
 
     // Validate Full Name
     if (!fullName.trim()) {
@@ -119,36 +113,9 @@ export default function SignupPage() {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      try {
-        const supabase = createClient();
-        const { data, error: signupError } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            data: {
-              full_name: fullName.trim(),
-            },
-          },
-        });
-
-        if (signupError) {
-          setError(signupError.message);
-          return;
-        }
-
-        // Check if session exists (means email verification is disabled)
-        if (data.session) {
-          router.refresh();
-          router.push("/");
-        } else {
-          // Email verification is required, or user is created
-          setSuccessMessage(
-            "Please check your inbox to confirm your email and complete your registration."
-          );
-        }
-      } catch (err: any) {
-        setError(err.message || "An unexpected error occurred. Please try again.");
-      }
+      // Mock sign-up — not wired to a backend yet.
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      router.push("/");
     });
   };
 
@@ -168,237 +135,184 @@ export default function SignupPage() {
           </p>
         </div>
 
-        {/* Success Message Banner */}
-        {successMessage ? (
-          <div className="rounded-lg bg-surface p-4 text-sm text-black border border-border space-y-3">
-            <div>
-              <p className="font-semibold">Registration Successful!</p>
-              <p className="text-slate mt-0.5">{successMessage}</p>
-            </div>
-            <div className="pt-1 border-t border-border">
-              <Link
-                href="/login"
-                className="inline-flex items-center text-xs font-bold text-black hover:underline"
-              >
-                Proceed to Sign In &rarr;
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Global Error Banner */}
-            {error && (
-              <div className="rounded-lg bg-surface p-3 text-sm text-black border border-border">
-                <p className="font-medium">Registration Failed</p>
-                <p className="text-slate mt-0.5">{error}</p>
-              </div>
+        {/* Signup Form */}
+        <form onSubmit={handleSignup} className="space-y-4" noValidate>
+          {/* Full Name input field */}
+          <div className="space-y-1">
+            <label htmlFor="fullName" className="text-sm font-semibold text-black block">
+              Full name
+            </label>
+            <input
+              id="fullName"
+              name="fullName"
+              type="text"
+              autoComplete="name"
+              value={fullName}
+              onChange={(e) => {
+                setFullName(e.target.value);
+                if (nameError) setNameError(null);
+              }}
+              disabled={isPending}
+              className={`w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-black outline-none placeholder:text-muted transition-all focus:border-transparent focus:ring-2 focus:ring-black ${
+                nameError ? "border-black" : "border-border"
+              }`}
+              placeholder="John Doe"
+            />
+            {nameError && (
+              <span className="text-xs text-black font-medium block mt-1">{nameError}</span>
             )}
+          </div>
 
-            {/* Signup Form */}
-            <form onSubmit={handleSignup} className="space-y-4" noValidate>
-              {/* Full Name input field */}
-              <div className="space-y-1">
-                <label
-                  htmlFor="fullName"
-                  className="text-sm font-semibold text-black block"
-                >
-                  Full name
-                </label>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  autoComplete="name"
-                  value={fullName}
-                  onChange={(e) => {
-                    setFullName(e.target.value);
-                    if (nameError) setNameError(null);
-                  }}
-                  disabled={isPending}
-                  className={`w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-black outline-none placeholder:text-muted transition-all focus:border-transparent focus:ring-2 focus:ring-black ${
-                    nameError ? "border-black" : "border-border"
-                  }`}
-                  placeholder="John Doe"
-                />
-                {nameError && (
-                  <span className="text-xs text-black font-medium block mt-1">
-                    {nameError}
-                  </span>
-                )}
-              </div>
+          {/* Email input field */}
+          <div className="space-y-1">
+            <label htmlFor="email" className="text-sm font-semibold text-black block">
+              Email address
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
+              disabled={isPending}
+              className={`w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-black outline-none placeholder:text-muted transition-all focus:border-transparent focus:ring-2 focus:ring-black ${
+                emailError ? "border-black" : "border-border"
+              }`}
+              placeholder="name@example.com"
+            />
+            {emailError && (
+              <span className="text-xs text-black font-medium block mt-1">{emailError}</span>
+            )}
+          </div>
 
-              {/* Email input field */}
-              <div className="space-y-1">
-                <label
-                  htmlFor="email"
-                  className="text-sm font-semibold text-black block"
-                >
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (emailError) setEmailError(null);
-                  }}
-                  disabled={isPending}
-                  className={`w-full rounded-lg border bg-white px-3.5 py-2 text-sm text-black outline-none placeholder:text-muted transition-all focus:border-transparent focus:ring-2 focus:ring-black ${
-                    emailError ? "border-black" : "border-border"
-                  }`}
-                  placeholder="name@example.com"
-                />
-                {emailError && (
-                  <span className="text-xs text-black font-medium block mt-1">
-                    {emailError}
-                  </span>
-                )}
-              </div>
-
-              {/* Password input field */}
-              <div className="space-y-1">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-semibold text-black block"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (passwordError) setPasswordError(null);
-                    }}
-                    disabled={isPending}
-                    className={`w-full rounded-lg border bg-white pl-3.5 pr-10 py-2 text-sm text-black outline-none placeholder:text-muted transition-all focus:border-transparent focus:ring-2 focus:ring-black ${
-                      passwordError ? "border-black" : "border-border"
-                    }`}
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    disabled={isPending}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted hover:text-black transition-colors"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? (
-                      <EyeOffIcon className="h-5 w-5" aria-hidden="true" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-                {passwordError && (
-                  <span className="text-xs text-black font-medium block mt-1">
-                    {passwordError}
-                  </span>
-                )}
-              </div>
-
-              {/* Confirm Password input field */}
-              <div className="space-y-1">
-                <label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-semibold text-black block"
-                >
-                  Confirm password
-                </label>
-                <div className="relative">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (confirmPasswordError) setConfirmPasswordError(null);
-                    }}
-                    disabled={isPending}
-                    className={`w-full rounded-lg border bg-white pl-3.5 pr-10 py-2 text-sm text-black outline-none placeholder:text-muted transition-all focus:border-transparent focus:ring-2 focus:ring-black ${
-                      confirmPasswordError ? "border-black" : "border-border"
-                    }`}
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    disabled={isPending}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted hover:text-black transition-colors"
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOffIcon className="h-5 w-5" aria-hidden="true" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-                {confirmPasswordError && (
-                  <span className="text-xs text-black font-medium block mt-1">
-                    {confirmPasswordError}
-                  </span>
-                )}
-              </div>
-
-              {/* Signup Submit Button */}
-              <button
-                type="submit"
+          {/* Password input field */}
+          <div className="space-y-1">
+            <label htmlFor="password" className="text-sm font-semibold text-black block">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (passwordError) setPasswordError(null);
+                }}
                 disabled={isPending}
-                className="flex w-full items-center justify-center rounded-full bg-black py-2 text-sm font-semibold text-white transition-all hover:bg-charcoal active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                className={`w-full rounded-lg border bg-white pl-3.5 pr-10 py-2 text-sm text-black outline-none placeholder:text-muted transition-all focus:border-transparent focus:ring-2 focus:ring-black ${
+                  passwordError ? "border-black" : "border-border"
+                }`}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                disabled={isPending}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted hover:text-black transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {isPending ? (
-                  <div className="flex items-center gap-2">
-                    <svg
-                      className="h-4 w-4 animate-spin text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span>Creating account...</span>
-                  </div>
+                {showPassword ? (
+                  <EyeOffIcon className="h-5 w-5" aria-hidden="true" />
                 ) : (
-                  "Create Account"
+                  <EyeIcon className="h-5 w-5" aria-hidden="true" />
                 )}
               </button>
-            </form>
-
-            {/* Footer Navigation Link */}
-            <div className="pt-3 text-center">
-              <p className="text-sm text-slate">
-                Already have an account?{" "}
-                <Link
-                  href="/login"
-                  className="font-semibold text-black hover:underline transition-all"
-                >
-                  Sign In
-                </Link>
-              </p>
             </div>
-          </>
-        )}
+            {passwordError && (
+              <span className="text-xs text-black font-medium block mt-1">{passwordError}</span>
+            )}
+          </div>
+
+          {/* Confirm Password input field */}
+          <div className="space-y-1">
+            <label htmlFor="confirmPassword" className="text-sm font-semibold text-black block">
+              Confirm password
+            </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (confirmPasswordError) setConfirmPasswordError(null);
+                }}
+                disabled={isPending}
+                className={`w-full rounded-lg border bg-white pl-3.5 pr-10 py-2 text-sm text-black outline-none placeholder:text-muted transition-all focus:border-transparent focus:ring-2 focus:ring-black ${
+                  confirmPasswordError ? "border-black" : "border-border"
+                }`}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                disabled={isPending}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted hover:text-black transition-colors"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? (
+                  <EyeOffIcon className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+            {confirmPasswordError && (
+              <span className="text-xs text-black font-medium block mt-1">
+                {confirmPasswordError}
+              </span>
+            )}
+          </div>
+
+          {/* Signup Submit Button */}
+          <button
+            type="submit"
+            disabled={isPending}
+            className="flex w-full items-center justify-center rounded-full bg-black py-2 text-sm font-semibold text-white transition-all hover:bg-charcoal active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+          >
+            {isPending ? (
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                <span>Creating account...</span>
+              </div>
+            ) : (
+              "Create Account"
+            )}
+          </button>
+        </form>
+
+        {/* Footer Navigation Link */}
+        <div className="pt-3 text-center">
+          <p className="text-sm text-slate">
+            Already have an account?{" "}
+            <Link href="/login" className="font-semibold text-black hover:underline transition-all">
+              Sign In
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

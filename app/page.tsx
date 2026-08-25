@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import {
   CameraIcon,
   CartIcon,
@@ -273,7 +272,6 @@ function ProfileMenu({
 
 function Navbar({
   isLoggedIn,
-  showAuthButtons,
   onSignIn,
   onSignUp,
   onLogout,
@@ -282,7 +280,6 @@ function Navbar({
   cartBump,
 }: {
   isLoggedIn: boolean;
-  showAuthButtons: boolean;
   onSignIn: () => void;
   onSignUp: () => void;
   onLogout: () => void;
@@ -320,7 +317,9 @@ function Navbar({
             </span>
           </button>
           
-          {showAuthButtons ? (
+          {isLoggedIn ? (
+            <ProfileMenu onLogout={onLogout} />
+          ) : (
             <div className="flex items-center gap-3">
               <button
                 onClick={onSignIn}
@@ -335,10 +334,6 @@ function Navbar({
                 Sign Up
               </button>
             </div>
-          ) : (
-            <ProfileMenu 
-              onLogout={onLogout}
-            />
           )}
         </div>
       </div>
@@ -632,33 +627,10 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [sort, setSort] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [showAuthButtons, setShowAuthButtons] = useState(false);
   const [cartCount, setCartCount] = useState(3);
   const [cartBump, setCartBump] = useState(false);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const loggedIn = !!session;
-      setIsLoggedIn(loggedIn);
-      if (loggedIn) {
-        setShowAuthButtons(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const handleAddToCart = (product: Product, e: React.MouseEvent<HTMLButtonElement>) => {
     if (!cartButtonRef.current) return;
@@ -689,21 +661,13 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setShowAuthButtons(true);
-    router.refresh();
-  };
-
   return (
     <div className="flex flex-1 flex-col bg-section">
       <Navbar
         isLoggedIn={isLoggedIn}
-        showAuthButtons={showAuthButtons}
         onSignIn={() => router.push("/login")}
         onSignUp={() => router.push("/signup")}
-        onLogout={handleLogout}
+        onLogout={() => setIsLoggedIn(false)}
         cartButtonRef={cartButtonRef}
         cartCount={cartCount}
         cartBump={cartBump}
