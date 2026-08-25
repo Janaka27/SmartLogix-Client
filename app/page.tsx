@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
 import {
   CameraIcon,
   CartIcon,
@@ -197,7 +199,17 @@ function FlyToCart({ item, onDone }: { item: FlyingItem; onDone: (id: string) =>
   );
 }
 
-function ProfileMenu({ onLogout }: { onLogout: () => void }) {
+function ProfileMenu({
+  isLoggedIn,
+  onSignIn,
+  onSignUp,
+  onLogout,
+}: {
+  isLoggedIn: boolean;
+  onSignIn: () => void;
+  onSignUp: () => void;
+  onLogout: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -238,27 +250,54 @@ function ProfileMenu({ onLogout }: { onLogout: () => void }) {
           role="menu"
           className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-border bg-white py-1.5 shadow-lg"
         >
-          <Link
-            href="/preferences"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
-          >
-            <SettingsIcon className="h-4 w-4" />
-            Preferences
-          </Link>
-          <div className="my-1 border-t border-border" />
-          <button
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              onLogout();
-            }}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
-          >
-            <LogoutIcon className="h-4 w-4" />
-            Logout
-          </button>
+          {isLoggedIn ? (
+            <>
+              <Link
+                href="/preferences"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
+              >
+                <SettingsIcon className="h-4 w-4" />
+                Preferences
+              </Link>
+              <div className="my-1 border-t border-border" />
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onLogout();
+                }}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
+              >
+                <LogoutIcon className="h-4 w-4" />
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onSignIn();
+                }}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black font-semibold"
+              >
+                Sign In
+              </button>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onSignUp();
+                }}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
+              >
+                Sign Up
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -300,36 +339,24 @@ function Navbar({
           <button aria-label="Search" className="text-slate hover:text-black">
             <SearchIcon className="h-5 w-5" />
           </button>
-          {isLoggedIn ? (
-            <>
-              <button
-                ref={cartButtonRef}
-                aria-label="Cart"
-                className={`relative text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
-              >
-                <CartIcon className="h-5 w-5" />
-                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
-                  {cartCount}
-                </span>
-              </button>
-              <ProfileMenu onLogout={onLogout} />
-            </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onSignIn}
-                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-surface"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={onSignUp}
-                className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-charcoal"
-              >
-                Sign Up
-              </button>
-            </div>
-          )}
+          
+          <button
+            ref={cartButtonRef}
+            aria-label="Cart"
+            className={`relative text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
+          >
+            <CartIcon className="h-5 w-5" />
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+              {cartCount}
+            </span>
+          </button>
+          
+          <ProfileMenu 
+            isLoggedIn={isLoggedIn}
+            onSignIn={onSignIn}
+            onSignUp={onSignUp}
+            onLogout={onLogout}
+          />
         </div>
       </div>
     </header>
@@ -617,14 +644,33 @@ function Footer() {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [sort, setSort] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [cartCount, setCartCount] = useState(3);
   const [cartBump, setCartBump] = useState(false);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleAddToCart = (product: Product, e: React.MouseEvent<HTMLButtonElement>) => {
     if (!cartButtonRef.current) return;
@@ -655,13 +701,19 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.refresh();
+  };
+
   return (
     <div className="flex flex-1 flex-col bg-section">
       <Navbar
         isLoggedIn={isLoggedIn}
-        onSignIn={() => setIsLoggedIn(true)}
-        onSignUp={() => setIsLoggedIn(true)}
-        onLogout={() => setIsLoggedIn(false)}
+        onSignIn={() => router.push("/login")}
+        onSignUp={() => router.push("/signup")}
+        onLogout={handleLogout}
         cartButtonRef={cartButtonRef}
         cartCount={cartCount}
         cartBump={cartBump}
