@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   CameraIcon,
@@ -197,7 +198,11 @@ function FlyToCart({ item, onDone }: { item: FlyingItem; onDone: (id: string) =>
   );
 }
 
-function ProfileMenu({ onLogout }: { onLogout: () => void }) {
+function ProfileMenu({
+  onLogout,
+}: {
+  onLogout: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -282,6 +287,7 @@ function Navbar({
   cartCount: number;
   cartBump: boolean;
 }) {
+  const router = useRouter();
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
@@ -300,31 +306,31 @@ function Navbar({
           <button aria-label="Search" className="text-slate hover:text-black">
             <SearchIcon className="h-5 w-5" />
           </button>
+          
+          <button
+            ref={cartButtonRef}
+            aria-label="Cart"
+            className={`relative text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
+          >
+            <CartIcon className="h-5 w-5" />
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+              {cartCount}
+            </span>
+          </button>
+          
           {isLoggedIn ? (
-            <>
-              <button
-                ref={cartButtonRef}
-                aria-label="Cart"
-                className={`relative text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
-              >
-                <CartIcon className="h-5 w-5" />
-                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
-                  {cartCount}
-                </span>
-              </button>
-              <ProfileMenu onLogout={onLogout} />
-            </>
+            <ProfileMenu onLogout={onLogout} />
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={onSignIn}
-                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-surface"
+                className="rounded-full border border-border bg-white px-4 py-1.5 text-sm font-medium text-slate hover:text-black hover:bg-surface transition-colors"
               >
                 Sign In
               </button>
               <button
                 onClick={onSignUp}
-                className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-charcoal"
+                className="rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-charcoal"
               >
                 Sign Up
               </button>
@@ -617,6 +623,7 @@ function Footer() {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [sort, setSort] = useState<string | null>(null);
@@ -659,8 +666,8 @@ export default function Home() {
     <div className="flex flex-1 flex-col bg-section">
       <Navbar
         isLoggedIn={isLoggedIn}
-        onSignIn={() => setIsLoggedIn(true)}
-        onSignUp={() => setIsLoggedIn(true)}
+        onSignIn={() => router.push("/login")}
+        onSignUp={() => router.push("/signup")}
         onLogout={() => setIsLoggedIn(false)}
         cartButtonRef={cartButtonRef}
         cartCount={cartCount}
