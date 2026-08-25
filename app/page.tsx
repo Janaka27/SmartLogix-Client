@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CameraIcon,
   CartIcon,
@@ -280,6 +281,7 @@ function Navbar({
   cartCount: number;
   cartBump: boolean;
 }) {
+  const router = useRouter();
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
@@ -302,6 +304,7 @@ function Navbar({
             <>
               <button
                 ref={cartButtonRef}
+                onClick={() => router.push("/cart")}
                 aria-label="Cart"
                 className={`relative text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
               >
