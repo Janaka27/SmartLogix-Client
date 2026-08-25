@@ -1,9 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { DroneIcon } from "../icons";
 
 function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -124,9 +124,14 @@ export default function SignupPage() {
       <div className="w-full max-w-md space-y-5 rounded-2xl border border-border bg-white p-6 sm:p-8 shadow-sm my-auto">
         {/* Header section with brand logo */}
         <div className="flex flex-col items-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-black">
-            <DroneIcon className="h-6 w-6" />
-          </div>
+          <Image
+            src="/images/logo.png"
+            alt="SmartLogix"
+            width={911}
+            height={285}
+            priority
+            className="h-7 w-auto"
+          />
           <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-black">
             Create your account
           </h2>
@@ -277,7 +282,7 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="flex w-full items-center justify-center rounded-full bg-black py-2 text-sm font-semibold text-white transition-all hover:bg-charcoal active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="flex w-full items-center justify-center rounded-full bg-primary py-2 text-sm font-semibold text-white transition-all hover:bg-primary-hover active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             {isPending ? (
               <div className="flex items-center gap-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -152,7 +153,7 @@ function ProductCard({
         >
           Add to Cart
         </button>
-        <button className="rounded-full bg-black py-2 text-xs font-medium text-white transition-colors hover:bg-charcoal">
+        <button className="rounded-full bg-primary py-2 text-xs font-medium text-white transition-colors hover:bg-primary-hover">
           Buy Now
         </button>
       </div>
@@ -184,7 +185,7 @@ function FlyToCart({ item, onDone }: { item: FlyingItem; onDone: (id: string) =>
 
   return (
     <div
-      className="pointer-events-none fixed z-50 flex h-9 w-9 items-center justify-center rounded-full bg-black text-white shadow-lg"
+      className="pointer-events-none fixed z-50 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white shadow-lg"
       style={{
         left: pos.x,
         top: pos.y,
@@ -292,10 +293,14 @@ function Navbar({
     <header className="sticky top-0 z-30 border-b border-border bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-2">
-          <DroneIcon className="h-6 w-6 text-black" />
-          <span className="text-lg font-semibold tracking-tight text-black">
-            SmartLogix
-          </span>
+          <Image
+            src="/images/logo.png"
+            alt="SmartLogix"
+            width={911}
+            height={285}
+            priority
+            className="h-11 w-auto"
+          />
         </div>
         <nav className="hidden items-center gap-8 text-sm font-medium text-slate md:flex">
           <a href="#" className="text-black">Home</a>
@@ -313,7 +318,7 @@ function Navbar({
             className={`relative shrink-0 text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
           >
             <CartIcon className="h-5 w-5" />
-            <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-white">
               {cartCount}
             </span>
           </button>
@@ -330,7 +335,7 @@ function Navbar({
               </button>
               <button
                 onClick={onSignUp}
-                className="rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-charcoal"
+                className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
               >
                 Sign Up
               </button>
@@ -376,7 +381,7 @@ function Hero({
               placeholder="Search on SmartLogix"
               className="w-full bg-transparent text-sm text-black outline-none placeholder:text-muted"
             />
-            <button className="shrink-0 rounded-full bg-black px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-charcoal">
+            <button className="shrink-0 rounded-full bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover">
               Search
             </button>
           </div>
@@ -407,7 +412,7 @@ function CategorySidebar({
               onClick={() => onSelect(c.label)}
               className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
                 active === c.label
-                  ? "bg-black text-white"
+                  ? "bg-primary text-white"
                   : "text-slate hover:bg-surface"
               }`}
             >
@@ -465,7 +470,7 @@ function Pagination() {
               key={p}
               onClick={() => setPage(p)}
               className={`h-8 w-8 rounded-lg text-sm transition-colors ${
-                page === p ? "bg-black text-white" : "hover:bg-surface"
+                page === p ? "bg-primary text-white" : "hover:bg-surface"
               }`}
             >
               {p}
@@ -600,7 +605,7 @@ function Footer() {
                 <a
                   key={i}
                   href="#"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-charcoal"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white transition-colors hover:bg-primary-hover"
                 >
                   <Icon />
                 </a>

@@ -58,7 +58,7 @@ export default function SearchPage() {
               <SearchIcon className="h-5 w-5 shrink-0 text-muted" />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products or sellers" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-muted" />
             </div>
-            <button type="submit" className="w-full rounded-full bg-black px-6 py-2.5 text-sm font-medium text-white hover:bg-charcoal sm:w-auto">Search</button>
+            <button type="submit" className="w-full rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-hover sm:w-auto">Search</button>
           </form>
         </div>
       </section>
@@ -79,7 +79,7 @@ export default function SearchPage() {
 
         <div className="scrollbar-none mt-7 flex gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden">
           {categories.map((item) => (
-            <button key={item} onClick={() => setCategory(item)} className={`shrink-0 rounded-full border px-4 py-2 text-sm transition-colors ${category === item ? "border-black bg-black text-white" : "border-border bg-white text-slate hover:border-black hover:text-black"}`}>
+            <button key={item} onClick={() => setCategory(item)} className={`shrink-0 rounded-full border px-4 py-2 text-sm transition-colors ${category === item ? "border-primary bg-primary text-white" : "border-border bg-white text-slate hover:border-primary hover:text-black"}`}>
               {item}
             </button>
           ))}
@@ -98,7 +98,7 @@ export default function SearchPage() {
                     <span className="shrink-0 text-sm font-semibold text-black">{product.price}</span>
                   </div>
                   <p className="mt-1 text-xs text-muted">{product.category} · {product.eta} by drone</p>
-                  <button className="mt-4 w-full rounded-full bg-black py-2.5 text-xs font-medium text-white hover:bg-charcoal">Add to cart</button>
+                  <button className="mt-4 w-full rounded-full bg-primary py-2.5 text-xs font-medium text-white hover:bg-primary-hover">Add to cart</button>
                 </div>
               </article>
             ))}

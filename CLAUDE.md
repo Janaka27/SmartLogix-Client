@@ -50,10 +50,17 @@ category, color.
 
 ## Design system
 
+Shared with SmartLogix-Seller: Outfit as the sans font (`--font-sans`, set in `app/layout.tsx` via
+`next/font/google`), the `/images/logo.png` (+ `logo-mark.png`, `logo-white-text.png`) brand assets, and
+Tailwind's `orange-500` / `orange-600` as the brand accent (`--color-primary` / `--color-primary-hover` in
+`app/globals.css`), used for primary CTAs, active states, and badges.
+
 | Color | Hex | Usage |
 |---|---|---|
+| Primary (Orange 500) | `#F97316` | Primary CTA buttons, active states, badges — shared brand accent |
+| Primary Hover (Orange 600) | `#EA580C` | Hover state for primary CTAs |
 | Pure Black | `#000000` | Main headings, strong text |
-| Dark Charcoal | `#202020` | Buttons, footer, large text |
+| Dark Charcoal | `#202020` | Footer, large text |
 | Charcoal | `#303030` | Secondary dark elements |
 | Dark Gray | `#404040` | Body/secondary text |
 | Medium Gray | `#808080` | Muted text, icons |
@@ -62,5 +69,5 @@ category, color.
 | Off White | `#FAFAFA` | Page sections |
 | White | `#FFFFFF` | Main background, cards |
 
-Prefer wiring these in as Tailwind theme tokens / CSS variables rather than hard-coded hex values once
-styling work starts, so the palette stays consistent across the app.
+These are wired in as Tailwind theme tokens / CSS variables in `app/globals.css` (`@theme inline` block)
+rather than hard-coded hex values, so the palette stays consistent across the app.

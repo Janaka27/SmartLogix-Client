@@ -12,6 +12,11 @@
   --color-border: #e0e0e0;
   --color-surface: #f0f0f0;
   --color-section: #fafafa;
+
+  /* Brand accent — shared with SmartLogix-Seller */
+  --color-primary: var(--color-orange-500);
+  --color-primary-hover: var(--color-orange-600);
+  --color-primary-foreground: #ffffff;
 }
 
 @theme inline {
@@ -24,7 +29,10 @@
   --color-border: var(--color-border);
   --color-surface: var(--color-surface);
   --color-section: var(--color-section);
-  --font-sans: var(--font-geist-sans);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
 }
 

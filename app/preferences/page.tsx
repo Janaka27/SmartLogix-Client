@@ -57,7 +57,7 @@ function Toggle({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          checked ? "bg-black" : "bg-border"
+          checked ? "bg-primary" : "bg-border"
         }`}
       >
         <span
@@ -220,7 +220,7 @@ export default function PreferencesPage() {
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <button
             type="submit"
-            className="rounded-full bg-black px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-charcoal"
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
           >
             Save Changes
           </button>

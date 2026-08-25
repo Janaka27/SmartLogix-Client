@@ -312,7 +312,7 @@ export default function CheckoutPage() {
 
             <button
               disabled={!canPlaceOrder}
-              className="mt-5 w-full rounded-full bg-black py-3 text-sm font-medium text-white transition-colors hover:bg-charcoal disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-5 w-full rounded-full bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
               Place Order
             </button>

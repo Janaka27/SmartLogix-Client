@@ -155,7 +155,7 @@ function EmptyCart() {
       </div>
       <Link
         href="/"
-        className="rounded-full bg-black px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-charcoal"
+        className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
       >
         Continue Shopping
       </Link>
@@ -266,7 +266,7 @@ export default function CartPage() {
                   placeholder="Promo code"
                   className="w-full bg-transparent text-sm text-black outline-none placeholder:text-muted"
                 />
-                <button className="shrink-0 rounded-full bg-black px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-charcoal">
+                <button className="shrink-0 rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-hover">
                   Apply
                 </button>
               </div>
@@ -278,7 +278,7 @@ export default function CartPage() {
 
               <Link
                 href="/checkout"
-                className="mt-5 block w-full rounded-full bg-black py-3 text-center text-sm font-medium text-white transition-colors hover:bg-charcoal"
+                className="mt-5 block w-full rounded-full bg-primary py-3 text-center text-sm font-medium text-white transition-colors hover:bg-primary-hover"
               >
                 Proceed to Checkout
               </Link>
