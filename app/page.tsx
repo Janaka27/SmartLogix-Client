@@ -200,14 +200,8 @@ function FlyToCart({ item, onDone }: { item: FlyingItem; onDone: (id: string) =>
 }
 
 function ProfileMenu({
-  isLoggedIn,
-  onSignIn,
-  onSignUp,
   onLogout,
 }: {
-  isLoggedIn: boolean;
-  onSignIn: () => void;
-  onSignUp: () => void;
   onLogout: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -250,54 +244,27 @@ function ProfileMenu({
           role="menu"
           className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-border bg-white py-1.5 shadow-lg"
         >
-          {isLoggedIn ? (
-            <>
-              <Link
-                href="/preferences"
-                role="menuitem"
-                onClick={() => setOpen(false)}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
-              >
-                <SettingsIcon className="h-4 w-4" />
-                Preferences
-              </Link>
-              <div className="my-1 border-t border-border" />
-              <button
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false);
-                  onLogout();
-                }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
-              >
-                <LogoutIcon className="h-4 w-4" />
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false);
-                  onSignIn();
-                }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black font-semibold"
-              >
-                Sign In
-              </button>
-              <button
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false);
-                  onSignUp();
-                }}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
-              >
-                Sign Up
-              </button>
-            </>
-          )}
+          <Link
+            href="/preferences"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
+          >
+            <SettingsIcon className="h-4 w-4" />
+            Preferences
+          </Link>
+          <div className="my-1 border-t border-border" />
+          <button
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
+          >
+            <LogoutIcon className="h-4 w-4" />
+            Logout
+          </button>
         </div>
       )}
     </div>
@@ -306,6 +273,7 @@ function ProfileMenu({
 
 function Navbar({
   isLoggedIn,
+  showAuthButtons,
   onSignIn,
   onSignUp,
   onLogout,
@@ -314,6 +282,7 @@ function Navbar({
   cartBump,
 }: {
   isLoggedIn: boolean;
+  showAuthButtons: boolean;
   onSignIn: () => void;
   onSignUp: () => void;
   onLogout: () => void;
@@ -351,12 +320,26 @@ function Navbar({
             </span>
           </button>
           
-          <ProfileMenu 
-            isLoggedIn={isLoggedIn}
-            onSignIn={onSignIn}
-            onSignUp={onSignUp}
-            onLogout={onLogout}
-          />
+          {showAuthButtons ? (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onSignIn}
+                className="rounded-full border border-border bg-white px-4 py-1.5 text-sm font-medium text-slate hover:text-black hover:bg-surface transition-colors"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={onSignUp}
+                className="rounded-full bg-black px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-charcoal"
+              >
+                Sign Up
+              </button>
+            </div>
+          ) : (
+            <ProfileMenu 
+              onLogout={onLogout}
+            />
+          )}
         </div>
       </div>
     </header>
@@ -648,7 +631,8 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [sort, setSort] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [showAuthButtons, setShowAuthButtons] = useState(false);
   const [cartCount, setCartCount] = useState(3);
   const [cartBump, setCartBump] = useState(false);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
@@ -664,7 +648,11 @@ export default function Home() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
+      const loggedIn = !!session;
+      setIsLoggedIn(loggedIn);
+      if (loggedIn) {
+        setShowAuthButtons(false);
+      }
     });
 
     return () => {
@@ -704,6 +692,7 @@ export default function Home() {
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    setShowAuthButtons(true);
     router.refresh();
   };
 
@@ -711,6 +700,7 @@ export default function Home() {
     <div className="flex flex-1 flex-col bg-section">
       <Navbar
         isLoggedIn={isLoggedIn}
+        showAuthButtons={showAuthButtons}
         onSignIn={() => router.push("/login")}
         onSignUp={() => router.push("/signup")}
         onLogout={handleLogout}
