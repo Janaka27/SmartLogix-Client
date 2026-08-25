@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   CameraIcon,
@@ -237,14 +238,15 @@ function ProfileMenu({ onLogout }: { onLogout: () => void }) {
           role="menu"
           className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-border bg-white py-1.5 shadow-lg"
         >
-          <button
+          <Link
+            href="/preferences"
             role="menuitem"
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
           >
             <SettingsIcon className="h-4 w-4" />
             Preferences
-          </button>
+          </Link>
           <div className="my-1 border-t border-border" />
           <button
             role="menuitem"
