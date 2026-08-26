@@ -240,7 +240,7 @@ function ProfileMenu({
 const NAV_LINKS = [
   { label: "Home", href: "#" },
   { label: "Shop", href: "#shop" },
-  { label: "Track Order", href: "#" },
+  { label: "Track Order", href: "/track-order" },
 ];
 
 function MobileNavMenu() {
