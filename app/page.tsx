@@ -27,6 +27,39 @@ import {
 
 type Product = DisplayProduct;
 
+interface StoredCartItem {
+  id: string;
+  name: string;
+  seller: string;
+  price: number;
+  quantity: number;
+  stock: number;
+  weightClass: Product["weightClass"];
+  eta: string;
+  icon: string;
+}
+
+function getStoredCartCount() {
+  const storedItems = window.localStorage.getItem("smartlogix-cart");
+  if (!storedItems) return 0;
+
+  try {
+    const items = JSON.parse(storedItems) as StoredCartItem[];
+    return items.reduce((count, item) => count + Math.max(0, item.quantity || 0), 0);
+  } catch {
+    return 0;
+  }
+}
+
+function cartIconKeyForName(name: string) {
+  if (/phone.?stand|phone holder/i.test(name)) return "phone";
+  if (/headphone|headset/i.test(name)) return "headphones";
+  if (/earbud|tws/i.test(name)) return "earbuds";
+  if (/camera|cctv/i.test(name)) return "camera";
+  if (/purifier/i.test(name)) return "purifier";
+  return "coffee";
+}
+
 const SORTS = ["New Arrival", "Best Seller", "On Discount"];
 
 function ProductThumb({ product }: { product: Product }) {
@@ -706,6 +739,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const syncCartCount = () => setCartCount(getStoredCartCount());
+    window.addEventListener("storage", syncCartCount);
+    window.addEventListener("smartlogix-cart-updated", syncCartCount);
+    syncCartCount();
+
+    return () => {
+      window.removeEventListener("storage", syncCartCount);
+      window.removeEventListener("smartlogix-cart-updated", syncCartCount);
+    };
+  }, []);
+
+  useEffect(() => {
     let active = true;
     const supabase = createClient();
 
@@ -734,6 +779,37 @@ export default function Home() {
 
   const handleAddToCart = (product: Product, e: React.MouseEvent<HTMLButtonElement>) => {
     if (!cartButtonRef.current) return;
+
+    const storedItems = window.localStorage.getItem("smartlogix-cart");
+    let items: StoredCartItem[] = [];
+    if (storedItems) {
+      try {
+        items = JSON.parse(storedItems) as StoredCartItem[];
+      } catch {
+        window.localStorage.removeItem("smartlogix-cart");
+      }
+    }
+
+    const existingItem = items.find((item) => item.id === product.id);
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      items.push({
+        id: product.id,
+        name: product.name,
+        seller: product.seller,
+        price: product.price,
+        quantity: 1,
+        stock: 99,
+        weightClass: product.weightClass,
+        eta: product.eta,
+        icon: cartIconKeyForName(product.name),
+      });
+    }
+    window.localStorage.setItem("smartlogix-cart", JSON.stringify(items));
+    setCartCount(items.reduce((count, item) => count + item.quantity, 0));
+    window.dispatchEvent(new Event("smartlogix-cart-updated"));
+
     const btnRect = e.currentTarget.getBoundingClientRect();
     const cartRect = cartButtonRef.current.getBoundingClientRect();
     setFlyingItems((items) => [
@@ -749,7 +825,6 @@ export default function Home() {
 
   const handleFlightDone = (id: string) => {
     setFlyingItems((items) => items.filter((i) => i.id !== id));
-    setCartCount((c) => c + 1);
     setCartBump(true);
     setTimeout(() => setCartBump(false), 400);
   };

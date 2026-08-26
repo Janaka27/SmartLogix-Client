@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   CameraIcon,
@@ -16,7 +16,6 @@ import {
   TrashIcon,
 } from "../icons";
 import { Stepper } from "../components/Stepper";
-import { SEED_PRODUCTS } from "@/lib/seed-products";
 
 type WeightClass = "Standard" | "Heavy";
 type IconKey = "phone" | "headphones" | "camera" | "earbuds" | "purifier" | "coffee";
@@ -42,12 +41,14 @@ const ITEM_ICONS: Record<IconKey, (props: { className?: string }) => React.JSX.E
   coffee: CoffeeIcon,
 };
 
-const INITIAL_ITEMS: CartItem[] = [
-  { id: SEED_PRODUCTS.p1.id, name: "Phone Stand Sakti", seller: "Sakti Goods", price: 29.9, quantity: 1, stock: 12, weightClass: "Standard", eta: "18 min", icon: "phone" },
-  { id: SEED_PRODUCTS.p2.id, name: "Headsound Pro", seller: "Headsound Audio", price: 12.0, quantity: 2, stock: 30, weightClass: "Standard", eta: "22 min", icon: "headphones" },
-  { id: SEED_PRODUCTS.p4.id, name: "CCTV Maling", seller: "Maling Security", price: 50.0, quantity: 1, stock: 5, weightClass: "Standard", eta: "27 min", icon: "camera" },
-  { id: SEED_PRODUCTS.p8.id, name: "Aer Purifier X1", seller: "Aer Living", price: 79.0, quantity: 1, stock: 3, weightClass: "Heavy", eta: "31 min", icon: "purifier" },
-];
+function iconKeyForName(name: string): IconKey {
+  if (/phone.?stand|phone holder/i.test(name)) return "phone";
+  if (/headphone|headset/i.test(name)) return "headphones";
+  if (/earbud|tws/i.test(name)) return "earbuds";
+  if (/camera|cctv/i.test(name)) return "camera";
+  if (/purifier/i.test(name)) return "purifier";
+  return "coffee";
+}
 
 const DELIVERY_FEE = 4.99;
 const HEAVY_SURCHARGE = 6.0;
@@ -94,7 +95,7 @@ function CartRow({
   onQuantityChange: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
 }) {
-  const Icon = ITEM_ICONS[item.icon];
+  const Icon = ITEM_ICONS[item.icon] ?? ITEM_ICONS[iconKeyForName(item.name)];
   const lowStock = item.stock <= 5;
 
   return (
@@ -165,8 +166,28 @@ function EmptyCart() {
 }
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>(INITIAL_ITEMS);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return [];
+
+    const storedItems = window.localStorage.getItem("smartlogix-cart");
+    if (!storedItems) return [];
+
+    try {
+      return (JSON.parse(storedItems) as Partial<CartItem>[]).map((item) => ({
+        ...item,
+        icon: item.icon && item.icon in ITEM_ICONS ? item.icon : iconKeyForName(item.name ?? ""),
+      })) as CartItem[];
+    } catch {
+      window.localStorage.removeItem("smartlogix-cart");
+      return [];
+    }
+  });
   const [promo, setPromo] = useState("");
+
+  useEffect(() => {
+    window.localStorage.setItem("smartlogix-cart", JSON.stringify(items));
+    window.dispatchEvent(new Event("smartlogix-cart-updated"));
+  }, [items]);
 
   const handleQuantityChange = (id: string, quantity: number) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
