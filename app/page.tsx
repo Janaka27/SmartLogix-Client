@@ -18,6 +18,7 @@ import {
   InstagramSocialIcon,
   LinkedinSocialIcon,
   LogoutIcon,
+  MenuIcon,
   PhoneStandIcon,
   PianoIcon,
   PurifierIcon,
@@ -26,6 +27,7 @@ import {
   SpeakerIcon,
   StarIcon,
   VacuumIcon,
+  XIcon,
   XSocialIcon,
 } from "./icons";
 
@@ -271,6 +273,56 @@ function ProfileMenu({
   );
 }
 
+const NAV_LINKS = [
+  { label: "Home", href: "#" },
+  { label: "Shop", href: "#shop" },
+  { label: "Track Order", href: "#" },
+];
+
+function MobileNavMenu() {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={menuRef} className="relative md:hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? "Close menu" : "Open menu"}
+        aria-expanded={open}
+        className="flex h-8 w-8 shrink-0 items-center justify-center text-slate hover:text-black"
+      >
+        {open ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-2 w-44 overflow-hidden rounded-xl border border-border bg-white py-1.5 shadow-lg">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2.5 text-sm font-medium text-slate hover:bg-surface hover:text-black"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Navbar({
   isLoggedIn,
   onSignIn,
@@ -291,30 +343,38 @@ function Navbar({
   const router = useRouter();
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-2">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+          <MobileNavMenu />
           <Image
             src="/images/logo.png"
             alt="SmartLogix"
             width={911}
             height={285}
             priority
-            className="h-11 w-auto"
+            className="h-7 w-auto shrink-0 sm:h-9 md:h-11"
           />
         </div>
         <nav className="hidden items-center gap-8 text-sm font-medium text-slate md:flex">
-          <a href="#" className="text-black">Home</a>
-          <a href="#shop" className="hover:text-black">Shop</a>
-          <a href="#" className="hover:text-black">Track Order</a>
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              className={link.label === "Home" ? "text-black" : "hover:text-black"}
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <button aria-label="Search" className="shrink-0 text-slate hover:text-black">
             <SearchIcon className="h-5 w-5" />
           </button>
-          
+
           <button
             ref={cartButtonRef}
             aria-label="Cart"
+            onClick={() => router.push("/cart")}
             className={`relative shrink-0 text-slate hover:text-black ${cartBump ? "animate-cart-bump" : ""}`}
           >
             <CartIcon className="h-5 w-5" />
@@ -322,20 +382,20 @@ function Navbar({
               {cartCount}
             </span>
           </button>
-          
+
           {isLoggedIn ? (
             <ProfileMenu onLogout={onLogout} />
           ) : (
-            <div className="hidden items-center gap-3 sm:flex">
+            <div className="flex items-center gap-1.5 sm:gap-3">
               <button
                 onClick={onSignIn}
-                className="rounded-full border border-border bg-white px-4 py-1.5 text-sm font-medium text-slate hover:text-black hover:bg-surface transition-colors"
+                className="rounded-full border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-slate hover:text-black hover:bg-surface transition-colors sm:px-4 sm:text-sm"
               >
                 Sign In
               </button>
               <button
                 onClick={onSignUp}
-                className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+                className="rounded-full bg-primary px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-hover sm:px-4 sm:text-sm"
               >
                 Sign Up
               </button>
@@ -369,19 +429,19 @@ function Hero({
       </div>
 
       <div className="relative mx-auto -mt-10 max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <h2 className="text-xl font-semibold text-black sm:text-2xl">
             Give All You Need
           </h2>
-          <div className="flex w-full max-w-md items-center gap-2 rounded-full border border-border bg-white px-2 py-1.5 sm:w-auto">
+          <div className="flex w-full min-w-0 max-w-md items-center gap-2 rounded-full border border-border bg-white px-2 py-1.5 sm:w-auto">
             <SearchIcon className="ml-2 h-4 w-4 shrink-0 text-muted" />
             <input
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search on SmartLogix"
-              className="w-full bg-transparent text-sm text-black outline-none placeholder:text-muted"
+              placeholder="Search products"
+              className="w-full min-w-0 truncate bg-transparent text-sm text-black outline-none placeholder:text-muted"
             />
-            <button className="shrink-0 rounded-full bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover">
+            <button className="shrink-0 rounded-full bg-primary px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover sm:px-5">
               Search
             </button>
           </div>
@@ -400,7 +460,7 @@ function CategorySidebar({
   active: string;
   onSelect: (v: string) => void;
   sort: string | null;
-  onSort: (v: string) => void;
+  onSort: (v: string | null) => void;
 }) {
   return (
     <aside className="hidden w-56 shrink-0 lg:block">
@@ -435,7 +495,7 @@ function CategorySidebar({
         {SORTS.map((s) => (
           <button
             key={s}
-            onClick={() => onSort(s)}
+            onClick={() => onSort(sort === s ? null : s)}
             className={`rounded-lg px-3 py-2 text-left transition-colors ${
               sort === s ? "bg-surface font-medium text-black" : "text-slate hover:bg-surface"
             }`}
@@ -448,28 +508,73 @@ function CategorySidebar({
   );
 }
 
+function MobileFilters({
+  active,
+  onSelect,
+  sort,
+  onSort,
+}: {
+  active: string;
+  onSelect: (v: string) => void;
+  sort: string | null;
+  onSort: (v: string | null) => void;
+}) {
+  return (
+    <div className="mb-6 flex flex-col gap-3 lg:hidden">
+      <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.label}
+            onClick={() => onSelect(c.label)}
+            className={`shrink-0 rounded-full border px-4 py-2 text-sm transition-colors ${
+              active === c.label
+                ? "border-primary bg-primary text-white"
+                : "border-border bg-white text-slate hover:border-primary hover:text-black"
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <select
+        aria-label="Sort products"
+        value={sort ?? ""}
+        onChange={(e) => onSort(e.target.value || null)}
+        className="w-full rounded-full border border-border bg-white px-4 py-2.5 text-sm text-black outline-none sm:w-auto"
+      >
+        <option value="">Sort: Featured</option>
+        {SORTS.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function Pagination() {
   const [page, setPage] = useState(1);
   const pages = [1, 2, 3, "…", 8, 9, 10] as const;
   return (
-    <div className="mt-8 flex items-center justify-between text-sm text-slate">
+    <div className="mt-8 flex items-center justify-between gap-2 text-sm text-slate">
       <button
         onClick={() => setPage((p) => Math.max(1, p - 1))}
-        className="flex items-center gap-1 hover:text-black"
+        className="flex shrink-0 items-center gap-1 hover:text-black"
       >
-        <ChevronLeftIcon className="h-4 w-4" /> Previous
+        <ChevronLeftIcon className="h-4 w-4" /> <span className="hidden sm:inline">Previous</span>
       </button>
-      <div className="flex items-center gap-1">
+      <div className="scrollbar-none flex min-w-0 items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden">
         {pages.map((p, i) =>
           p === "…" ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-muted">
+            <span key={`ellipsis-${i}`} className="shrink-0 px-2 text-muted">
               …
             </span>
           ) : (
             <button
               key={p}
               onClick={() => setPage(p)}
-              className={`h-8 w-8 rounded-lg text-sm transition-colors ${
+              className={`h-8 w-8 shrink-0 rounded-lg text-sm transition-colors ${
                 page === p ? "bg-primary text-white" : "hover:bg-surface"
               }`}
             >
@@ -480,9 +585,9 @@ function Pagination() {
       </div>
       <button
         onClick={() => setPage((p) => p + 1)}
-        className="flex items-center gap-1 hover:text-black"
+        className="flex shrink-0 items-center gap-1 hover:text-black"
       >
-        Next <ChevronRightIcon className="h-4 w-4" />
+        <span className="hidden sm:inline">Next</span> <ChevronRightIcon className="h-4 w-4" />
       </button>
     </div>
   );
@@ -500,7 +605,7 @@ function Recommendations({
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+    <section className="mx-auto w-full min-w-0 max-w-6xl px-4 py-14 sm:px-6">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-black">
           Explore our recommendations
@@ -538,7 +643,7 @@ function Recommendations({
 
 function CtaBanner() {
   return (
-    <section className="mx-auto max-w-6xl px-4 sm:px-6">
+    <section className="mx-auto w-full max-w-6xl px-4 sm:px-6">
       <div className="flex flex-col gap-6 rounded-2xl bg-charcoal p-8 text-white sm:flex-row sm:items-center sm:justify-between sm:p-10">
         <div>
           <h2 className="text-2xl font-semibold leading-tight sm:text-3xl">
@@ -578,7 +683,7 @@ function Footer() {
   return (
     <footer className="mt-14 border-t border-border">
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:flex-row sm:justify-between sm:px-6">
-        <div className="flex gap-16">
+        <div className="grid grid-cols-2 gap-8 sm:flex sm:gap-16">
           <div>
             <h4 className="mb-3 text-sm font-semibold text-black">About</h4>
             <ul className="flex flex-col gap-2 text-sm text-slate">
@@ -685,9 +790,15 @@ export default function Home() {
           active={activeCategory}
           onSelect={setActiveCategory}
           sort={sort}
-          onSort={(s) => setSort((prev) => (prev === s ? null : s))}
+          onSort={setSort}
         />
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
+          <MobileFilters
+            active={activeCategory}
+            onSelect={setActiveCategory}
+            sort={sort}
+            onSort={setSort}
+          />
           {filtered.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted">
               No products match &ldquo;{search}&rdquo;.
