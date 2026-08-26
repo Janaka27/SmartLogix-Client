@@ -51,6 +51,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   // Error States
@@ -93,7 +94,7 @@ export default function LoginPage() {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      const supabase = createClient();
+      const supabase = createClient({ rememberMe });
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -173,21 +174,12 @@ export default function LoginPage() {
 
           {/* Password input field */}
           <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="password"
-                className="text-sm font-semibold text-black block"
-              >
-                Password
-              </label>
-              <Link
-                href="#"
-                className="text-xs font-medium text-slate hover:text-black transition-colors"
-                onClick={(e) => e.preventDefault()} // Placeholder, not implemented yet
-              >
-                Forgot password?
-              </Link>
-            </div>
+            <label
+              htmlFor="password"
+              className="text-sm font-semibold text-black block"
+            >
+              Password
+            </label>
             <div className="relative">
               <input
                 id="password"
@@ -224,6 +216,27 @@ export default function LoginPage() {
                 {passwordError}
               </span>
             )}
+          </div>
+
+          {/* Remember me / Forgot password row */}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-sm text-slate">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isPending}
+                className="h-4 w-4 rounded border-border text-black accent-black focus:ring-2 focus:ring-black"
+              />
+              Remember me
+            </label>
+            <Link
+              href="#"
+              className="text-xs font-medium text-slate hover:text-black transition-colors"
+              onClick={(e) => e.preventDefault()} // Placeholder, not implemented yet
+            >
+              Forgot password?
+            </Link>
           </div>
 
           {/* Login Submit Button */}
