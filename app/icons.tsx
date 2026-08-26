@@ -196,6 +196,23 @@ export function FilterIcon(props: IconProps) {
   );
 }
 
+export function BoxIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3.5 8 12 4l8.5 4M3.5 8v8L12 20l8.5-4V8M3.5 8 12 12l8.5-4M12 12v8" />
+    </svg>
+  );
+}
+
+export function LaptopIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="4" width="16" height="10.5" rx="1.5" />
+      <path d="M2.5 19.5h19L20 16.5H4Z" />
+    </svg>
+  );
+}
+
 export function XIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>

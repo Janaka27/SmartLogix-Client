@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { ensureProfile } from "@/utils/supabase/ensure-profile";
 
 function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -56,6 +58,10 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  // Success / Error States
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   // Validation States
   const [nameError, setNameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -68,6 +74,7 @@ export default function SignupPage() {
     setEmailError(null);
     setPasswordError(null);
     setConfirmPasswordError(null);
+    setError(null);
 
     // Validate Full Name
     if (!fullName.trim()) {
@@ -113,9 +120,30 @@ export default function SignupPage() {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      // Mock sign-up — not wired to a backend yet.
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      router.push("/");
+      const supabase = createClient();
+      const { data, error: signupError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { full_name: fullName.trim() },
+        },
+      });
+
+      if (signupError) {
+        setError(signupError.message);
+        return;
+      }
+
+      if (data.user && data.session) {
+        // Email confirmation is off — we're already signed in.
+        await ensureProfile(supabase, data.user);
+        router.push("/");
+        router.refresh();
+      } else {
+        setSuccessMessage(
+          "Please check your inbox to confirm your email and complete your registration.",
+        );
+      }
     });
   };
 
@@ -140,8 +168,33 @@ export default function SignupPage() {
           </p>
         </div>
 
-        {/* Signup Form */}
-        <form onSubmit={handleSignup} className="space-y-4" noValidate>
+        {successMessage ? (
+          <div className="space-y-3 rounded-lg border border-border bg-surface p-4 text-sm text-black">
+            <div>
+              <p className="font-semibold">Registration Successful!</p>
+              <p className="mt-0.5 text-slate">{successMessage}</p>
+            </div>
+            <div className="border-t border-border pt-1">
+              <Link
+                href="/login"
+                className="inline-flex items-center text-xs font-bold text-black hover:underline"
+              >
+                Proceed to Sign In &rarr;
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Global Error Banner */}
+            {error && (
+              <div className="rounded-lg border border-border bg-surface p-3 text-sm text-black">
+                <p className="font-medium">Registration failed</p>
+                <p className="mt-0.5 text-slate">{error}</p>
+              </div>
+            )}
+
+            {/* Signup Form */}
+            <form onSubmit={handleSignup} className="space-y-4" noValidate>
           {/* Full Name input field */}
           <div className="space-y-1">
             <label htmlFor="fullName" className="text-sm font-semibold text-black block">
@@ -309,15 +362,17 @@ export default function SignupPage() {
           </button>
         </form>
 
-        {/* Footer Navigation Link */}
-        <div className="pt-3 text-center">
-          <p className="text-sm text-slate">
-            Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-black hover:underline transition-all">
-              Sign In
-            </Link>
-          </p>
-        </div>
+            {/* Footer Navigation Link */}
+            <div className="pt-3 text-center">
+              <p className="text-sm text-slate">
+                Already have an account?{" "}
+                <Link href="/login" className="font-semibold text-black hover:underline transition-all">
+                  Sign In
+                </Link>
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

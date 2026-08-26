@@ -1,23 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { fetchActiveProducts, type DisplayProduct } from "@/lib/products";
 import { CartIcon, DroneIcon, SearchIcon } from "../icons";
-
-const products = [
-  { name: "Phone Stand Sakti", category: "For Phone", price: "$29.90", eta: "18 min" },
-  { name: "Headsound Pro", category: "For Music", price: "$12.00", eta: "22 min" },
-  { name: "Adudu Cleaner", category: "For Home", price: "$29.90", eta: "35 min" },
-  { name: "CCTV Maling", category: "For Home", price: "$50.00", eta: "27 min" },
-  { name: "Stuffus Peker 32", category: "For Storage", price: "$9.90", eta: "15 min" },
-  { name: "Aer Purifier X1", category: "For Home", price: "$79.00", eta: "31 min" },
-];
-
-const categories = ["All products", "For Home", "For Music", "For Phone", "For Storage"];
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All products");
+  const [products, setProducts] = useState<DisplayProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+    fetchActiveProducts(supabase)
+      .then((data) => {
+        if (active) setProducts(data);
+      })
+      .catch((err) => console.error("Failed to load products", err))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const categories = [
+    "All products",
+    ...Array.from(new Set(products.map((p) => p.category))),
+  ];
 
   const results = products.filter((product) => {
     const matchesQuery = product.name.toLowerCase().includes(query.toLowerCase());
@@ -85,23 +99,37 @@ export default function SearchPage() {
           ))}
         </div>
 
-        {results.length ? (
+        {loading ? (
+          <p className="mt-10 text-center text-sm text-muted">Loading products…</p>
+        ) : results.length ? (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((product) => (
-              <article key={product.name} className="flex min-w-0 flex-col rounded-2xl border border-border bg-white p-3">
-                <div className="flex h-40 items-center justify-center rounded-xl bg-surface sm:h-44">
-                  <DroneIcon className="h-14 w-14 text-slate" />
-                </div>
-                <div className="flex flex-1 flex-col pt-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-black">{product.name}</h3>
-                    <span className="shrink-0 text-sm font-semibold text-black">{product.price}</span>
+            {results.map((product) => {
+              const Icon = product.icon;
+              return (
+                <article
+                  key={product.id}
+                  className="flex min-w-0 flex-col rounded-2xl border border-border bg-white p-3"
+                >
+                  <div className="flex h-40 items-center justify-center rounded-xl bg-surface sm:h-44">
+                    <Icon className="h-14 w-14 text-slate" />
                   </div>
-                  <p className="mt-1 text-xs text-muted">{product.category} · {product.eta} by drone</p>
-                  <button className="mt-4 w-full rounded-full bg-primary py-2.5 text-xs font-medium text-white hover:bg-primary-hover">Add to cart</button>
-                </div>
-              </article>
-            ))}
+                  <div className="flex flex-1 flex-col pt-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-black">{product.name}</h3>
+                      <span className="shrink-0 text-sm font-semibold text-black">
+                        ${product.price.toFixed(2)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted">
+                      {product.category} · {product.eta} by drone
+                    </p>
+                    <button className="mt-4 w-full rounded-full bg-primary py-2.5 text-xs font-medium text-white hover:bg-primary-hover">
+                      Add to cart
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="mt-6 rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center">

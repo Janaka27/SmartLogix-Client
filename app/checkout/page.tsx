@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
+import { SEED_PRODUCTS, SEED_WAREHOUSE_ID } from "@/lib/seed-products";
 import {
   CameraIcon,
   CashIcon,
@@ -27,6 +30,8 @@ interface OrderItem {
   name: string;
   quantity: number;
   price: number;
+  weightKg: number;
+  volumeCm3: number;
   icon: IconKey;
 }
 
@@ -40,10 +45,10 @@ const ITEM_ICONS: Record<IconKey, (props: { className?: string }) => React.JSX.E
 };
 
 const ORDER_ITEMS: OrderItem[] = [
-  { id: "p1", name: "Phone Stand Sakti", quantity: 1, price: 29.9, icon: "phone" },
-  { id: "p2", name: "Headsound Pro", quantity: 2, price: 12.0, icon: "headphones" },
-  { id: "p4", name: "CCTV Maling", quantity: 1, price: 50.0, icon: "camera" },
-  { id: "p8", name: "Aer Purifier X1", quantity: 1, price: 79.0, icon: "purifier" },
+  { id: SEED_PRODUCTS.p1.id, name: "Phone Stand Sakti", quantity: 1, price: 29.9, weightKg: SEED_PRODUCTS.p1.weightKg, volumeCm3: SEED_PRODUCTS.p1.volumeCm3, icon: "phone" },
+  { id: SEED_PRODUCTS.p2.id, name: "Headsound Pro", quantity: 2, price: 12.0, weightKg: SEED_PRODUCTS.p2.weightKg, volumeCm3: SEED_PRODUCTS.p2.volumeCm3, icon: "headphones" },
+  { id: SEED_PRODUCTS.p4.id, name: "CCTV Maling", quantity: 1, price: 50.0, weightKg: SEED_PRODUCTS.p4.weightKg, volumeCm3: SEED_PRODUCTS.p4.volumeCm3, icon: "camera" },
+  { id: SEED_PRODUCTS.p8.id, name: "Aer Purifier X1", quantity: 1, price: 79.0, weightKg: SEED_PRODUCTS.p8.weightKg, volumeCm3: SEED_PRODUCTS.p8.volumeCm3, icon: "purifier" },
 ];
 
 const DELIVERY_FEE = 4.99;
@@ -92,6 +97,8 @@ function Field({
 }
 
 export default function CheckoutPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [address, setAddress] = useState({
     fullName: "",
     phone: "",
@@ -102,6 +109,17 @@ export default function CheckoutPage() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [rangeStatus, setRangeStatus] = useState<RangeStatus>("unchecked");
   const [payment, setPayment] = useState<PaymentMethod>("card");
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setCheckingAuth(false);
+    });
+  }, []);
 
   const updateField = (key: keyof typeof address) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setAddress((prev) => ({ ...prev, [key]: e.target.value }));
@@ -130,9 +148,124 @@ export default function CheckoutPage() {
   const deliveryFee = DELIVERY_FEE + HEAVY_SURCHARGE;
   const total = subtotal + deliveryFee;
   const itemCount = ORDER_ITEMS.reduce((n, i) => n + i.quantity, 0);
+  const totalWeightKg = ORDER_ITEMS.reduce((sum, i) => sum + i.weightKg * i.quantity, 0);
+  const totalVolumeCm3 = ORDER_ITEMS.reduce((sum, i) => sum + i.volumeCm3 * i.quantity, 0);
 
-  const canPlaceOrder =
-    address.fullName && address.phone && address.line1 && address.city && rangeStatus === "in-range";
+  const canPlaceOrder = Boolean(
+    user &&
+      address.fullName &&
+      address.phone &&
+      address.line1 &&
+      address.city &&
+      rangeStatus === "in-range" &&
+      coords,
+  );
+
+  const handlePlaceOrder = async () => {
+    if (!canPlaceOrder || !user || !coords) return;
+    setPlacingOrder(true);
+    setOrderError(null);
+
+    try {
+      const supabase = createClient();
+      const { data: order, error: orderInsertError } = await supabase
+        .from("orders")
+        .insert({
+          buyer_id: user.id,
+          warehouse_id: SEED_WAREHOUSE_ID,
+          status: "pending",
+          delivery_lat: coords.lat,
+          delivery_lng: coords.lng,
+          delivery_address: address.line1,
+          delivery_city: address.city,
+          delivery_postal_code: address.postalCode || null,
+          total_weight_kg: totalWeightKg,
+          total_volume_cm3: totalVolumeCm3,
+          total_amount: total,
+        })
+        .select("id")
+        .single();
+
+      if (orderInsertError) throw orderInsertError;
+
+      const { error: itemsInsertError } = await supabase.from("order_items").insert(
+        ORDER_ITEMS.map((item) => ({
+          order_id: order.id,
+          product_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.price,
+          weight_kg: item.weightKg,
+          volume_cm3: item.volumeCm3,
+        })),
+      );
+
+      if (itemsInsertError) throw itemsInsertError;
+
+      setPlacedOrderId(order.id);
+    } catch (err) {
+      const message =
+        err && typeof err === "object" && "message" in err && typeof err.message === "string"
+          ? err.message
+          : "Could not place your order. Please try again.";
+      setOrderError(message);
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center bg-section">
+        <p className="text-sm text-muted">Loading checkout…</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-section px-4 text-center">
+        <h1 className="text-xl font-semibold text-black">Sign in to check out</h1>
+        <p className="max-w-sm text-sm text-muted">
+          You need an account so we can tie this order — and its live tracking — to you.
+        </p>
+        <div className="flex gap-3">
+          <Link
+            href="/login"
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/signup"
+            className="rounded-full border border-border bg-white px-6 py-2.5 text-sm font-medium text-black transition-colors hover:bg-surface"
+          >
+            Sign Up
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (placedOrderId) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-section px-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-charcoal/5">
+          <CheckCircleIcon className="h-8 w-8 text-charcoal" />
+        </div>
+        <h1 className="text-xl font-semibold text-black">Order placed!</h1>
+        <p className="max-w-sm text-sm text-muted">
+          Order #{placedOrderId.slice(0, 8)} is confirmed — we&apos;ll allocate it to a drone from
+          the nearest warehouse and keep you posted.
+        </p>
+        <Link
+          href="/"
+          className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+        >
+          Continue Shopping
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-section">
@@ -310,11 +443,17 @@ export default function CheckoutPage() {
               <span>${total.toFixed(2)}</span>
             </div>
 
+            {orderError && (
+              <p className="mt-4 rounded-lg border border-border bg-surface p-3 text-xs font-medium text-black">
+                {orderError}
+              </p>
+            )}
             <button
-              disabled={!canPlaceOrder}
+              onClick={handlePlaceOrder}
+              disabled={!canPlaceOrder || placingOrder}
               className="mt-5 w-full rounded-full bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Place Order
+              {placingOrder ? "Placing order…" : "Place Order"}
             </button>
             {!canPlaceOrder && (
               <p className="mt-2 text-center text-[11px] text-muted">

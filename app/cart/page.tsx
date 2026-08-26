@@ -16,6 +16,7 @@ import {
   TrashIcon,
 } from "../icons";
 import { Stepper } from "../components/Stepper";
+import { SEED_PRODUCTS } from "@/lib/seed-products";
 
 type WeightClass = "Standard" | "Heavy";
 type IconKey = "phone" | "headphones" | "camera" | "earbuds" | "purifier" | "coffee";
@@ -42,10 +43,10 @@ const ITEM_ICONS: Record<IconKey, (props: { className?: string }) => React.JSX.E
 };
 
 const INITIAL_ITEMS: CartItem[] = [
-  { id: "p1", name: "Phone Stand Sakti", seller: "Sakti Goods", price: 29.9, quantity: 1, stock: 12, weightClass: "Standard", eta: "18 min", icon: "phone" },
-  { id: "p2", name: "Headsound Pro", seller: "Headsound Audio", price: 12.0, quantity: 2, stock: 30, weightClass: "Standard", eta: "22 min", icon: "headphones" },
-  { id: "p4", name: "CCTV Maling", seller: "Maling Security", price: 50.0, quantity: 1, stock: 5, weightClass: "Standard", eta: "27 min", icon: "camera" },
-  { id: "p8", name: "Aer Purifier X1", seller: "Aer Living", price: 79.0, quantity: 1, stock: 3, weightClass: "Heavy", eta: "31 min", icon: "purifier" },
+  { id: SEED_PRODUCTS.p1.id, name: "Phone Stand Sakti", seller: "Sakti Goods", price: 29.9, quantity: 1, stock: 12, weightClass: "Standard", eta: "18 min", icon: "phone" },
+  { id: SEED_PRODUCTS.p2.id, name: "Headsound Pro", seller: "Headsound Audio", price: 12.0, quantity: 2, stock: 30, weightClass: "Standard", eta: "22 min", icon: "headphones" },
+  { id: SEED_PRODUCTS.p4.id, name: "CCTV Maling", seller: "Maling Security", price: 50.0, quantity: 1, stock: 5, weightClass: "Standard", eta: "27 min", icon: "camera" },
+  { id: SEED_PRODUCTS.p8.id, name: "Aer Purifier X1", seller: "Aer Living", price: 79.0, quantity: 1, stock: 3, weightClass: "Heavy", eta: "31 min", icon: "purifier" },
 ];
 
 const DELIVERY_FEE = 4.99;

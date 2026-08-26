@@ -4,102 +4,33 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { ensureProfile } from "@/utils/supabase/ensure-profile";
+import { fetchActiveProducts, type DisplayProduct } from "@/lib/products";
 import {
-  CameraIcon,
   CartIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  CoffeeIcon,
   DroneIcon,
-  EarbudsIcon,
   FacebookSocialIcon,
-  HeadphonesIcon,
   InstagramSocialIcon,
   LinkedinSocialIcon,
   LogoutIcon,
   MenuIcon,
-  PhoneStandIcon,
-  PianoIcon,
-  PurifierIcon,
   SearchIcon,
   SettingsIcon,
-  SpeakerIcon,
   StarIcon,
-  VacuumIcon,
   XIcon,
   XSocialIcon,
 } from "./icons";
 
-type WeightClass = "Standard" | "Heavy";
-type IconKey =
-  | "phone"
-  | "headphones"
-  | "vacuum"
-  | "camera"
-  | "speaker"
-  | "earbuds"
-  | "piano"
-  | "purifier"
-  | "coffee";
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  seller: string;
-  rating: number;
-  reviews: number;
-  price: number;
-  weightClass: WeightClass;
-  eta: string;
-  icon: IconKey;
-}
-
-const CATEGORIES = [
-  { label: "All Products", count: 32 },
-  { label: "For Home" },
-  { label: "For Music" },
-  { label: "For Phone" },
-  { label: "For Storage" },
-];
+type Product = DisplayProduct;
 
 const SORTS = ["New Arrival", "Best Seller", "On Discount"];
 
-const PRODUCTS: Product[] = [
-  { id: "p1", name: "Phone Stand Sakti", category: "For Phone", seller: "Sakti Goods", rating: 5.0, reviews: 1200, price: 29.9, weightClass: "Standard", eta: "18 min", icon: "phone" },
-  { id: "p2", name: "Headsound Pro", category: "For Music", seller: "Headsound Audio", rating: 5.0, reviews: 1200, price: 12.0, weightClass: "Standard", eta: "22 min", icon: "headphones" },
-  { id: "p3", name: "Adudu Cleaner", category: "For Home", seller: "Adudu Home", rating: 4.4, reviews: 1000, price: 29.9, weightClass: "Heavy", eta: "35 min", icon: "vacuum" },
-  { id: "p4", name: "CCTV Maling", category: "For Home", seller: "Maling Security", rating: 4.8, reviews: 120, price: 50.0, weightClass: "Standard", eta: "27 min", icon: "camera" },
-  { id: "p5", name: "Stuffus Peker 32", category: "For Storage", seller: "Stuffus", rating: 5.0, reviews: 1200, price: 9.9, weightClass: "Standard", eta: "15 min", icon: "speaker" },
-  { id: "p6", name: "Stuffus R175", category: "For Music", seller: "Stuffus Audio", rating: 4.8, reviews: 2400, price: 34.1, weightClass: "Standard", eta: "19 min", icon: "earbuds" },
-  { id: "p7", name: "Grand Sound Piano", category: "For Music", seller: "Harmony Co.", rating: 4.9, reviews: 340, price: 249.0, weightClass: "Heavy", eta: "48 min", icon: "piano" },
-  { id: "p8", name: "Aer Purifier X1", category: "For Home", seller: "Aer Living", rating: 4.6, reviews: 860, price: 79.0, weightClass: "Heavy", eta: "31 min", icon: "purifier" },
-  { id: "p9", name: "Brewkit Coffee Maker", category: "For Home", seller: "Brewkit", rating: 4.7, reviews: 540, price: 45.0, weightClass: "Standard", eta: "24 min", icon: "coffee" },
-];
-
-const RECOMMENDED: Product[] = [
-  { id: "r1", name: "TWS Bujug", category: "For Music", seller: "Bujug Audio", rating: 5.0, reviews: 1200, price: 29.9, weightClass: "Standard", eta: "16 min", icon: "earbuds" },
-  { id: "r2", name: "Headsound Baptis", category: "For Music", seller: "Headsound Audio", rating: 5.0, reviews: 1200, price: 12.0, weightClass: "Standard", eta: "20 min", icon: "headphones" },
-  { id: "r3", name: "Grand Sound Piano", category: "For Music", seller: "Harmony Co.", rating: 4.9, reviews: 340, price: 249.0, weightClass: "Heavy", eta: "48 min", icon: "piano" },
-  { id: "r4", name: "Adudu Cleaner", category: "For Home", seller: "Adudu Home", rating: 4.4, reviews: 1000, price: 29.9, weightClass: "Heavy", eta: "35 min", icon: "vacuum" },
-  { id: "r5", name: "CCTV Maling", category: "For Home", seller: "Maling Security", rating: 4.8, reviews: 120, price: 50.0, weightClass: "Standard", eta: "27 min", icon: "camera" },
-];
-
-const PRODUCT_ICONS: Record<IconKey, (props: { className?: string }) => React.JSX.Element> = {
-  phone: PhoneStandIcon,
-  headphones: HeadphonesIcon,
-  vacuum: VacuumIcon,
-  camera: CameraIcon,
-  speaker: SpeakerIcon,
-  earbuds: EarbudsIcon,
-  piano: PianoIcon,
-  purifier: PurifierIcon,
-  coffee: CoffeeIcon,
-};
-
 function ProductThumb({ product }: { product: Product }) {
-  const Icon = PRODUCT_ICONS[product.icon];
+  const Icon = product.icon;
   return (
     <div className="relative flex h-40 items-center justify-center rounded-xl bg-surface">
       <Icon className="h-14 w-14 text-slate" />
@@ -165,14 +96,14 @@ function ProductCard({
 
 interface FlyingItem {
   id: string;
-  icon: IconKey;
+  icon: Product["icon"];
   from: { x: number; y: number };
   to: { x: number; y: number };
 }
 
 function FlyToCart({ item, onDone }: { item: FlyingItem; onDone: (id: string) => void }) {
   const [flown, setFlown] = useState(false);
-  const Icon = PRODUCT_ICONS[item.icon];
+  const Icon = item.icon;
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => requestAnimationFrame(() => setFlown(true)));
@@ -451,12 +382,19 @@ function Hero({
   );
 }
 
+interface CategoryOption {
+  label: string;
+  count?: number;
+}
+
 function CategorySidebar({
+  categories,
   active,
   onSelect,
   sort,
   onSort,
 }: {
+  categories: CategoryOption[];
   active: string;
   onSelect: (v: string) => void;
   sort: string | null;
@@ -466,7 +404,7 @@ function CategorySidebar({
     <aside className="hidden w-56 shrink-0 lg:block">
       <h3 className="mb-3 text-sm font-semibold text-black">Category</h3>
       <ul className="flex flex-col gap-1 text-sm">
-        {CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <li key={c.label}>
             <button
               onClick={() => onSelect(c.label)}
@@ -509,11 +447,13 @@ function CategorySidebar({
 }
 
 function MobileFilters({
+  categories,
   active,
   onSelect,
   sort,
   onSort,
 }: {
+  categories: CategoryOption[];
   active: string;
   onSelect: (v: string) => void;
   sort: string | null;
@@ -522,7 +462,7 @@ function MobileFilters({
   return (
     <div className="mb-6 flex flex-col gap-3 lg:hidden">
       <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
-        {CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <button
             key={c.label}
             onClick={() => onSelect(c.label)}
@@ -594,8 +534,10 @@ function Pagination() {
 }
 
 function Recommendations({
+  products,
   onAddToCart,
 }: {
+  products: Product[];
   onAddToCart: (product: Product, e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -631,7 +573,7 @@ function Recommendations({
         ref={scrollerRef}
         className="flex gap-4 overflow-x-auto scroll-smooth pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden"
       >
-        {RECOMMENDED.map((p) => (
+        {products.map((p) => (
           <div key={p.id} className="w-64 shrink-0">
             <ProductCard product={p} onAddToCart={onAddToCart} />
           </div>
@@ -737,11 +679,58 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [sort, setSort] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [cartCount, setCartCount] = useState(3);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [cartCount, setCartCount] = useState(0);
   const [cartBump, setCartBump] = useState(false);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+      if (session?.user) void ensureProfile(supabase, session.user);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+      if (session?.user) void ensureProfile(supabase, session.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+
+    fetchActiveProducts(supabase)
+      .then((data) => {
+        if (active) setProducts(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load products", err);
+      })
+      .finally(() => {
+        if (active) setLoadingProducts(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const categories: CategoryOption[] = [
+    { label: "All Products", count: products.length },
+    ...Array.from(new Set(products.map((p) => p.category))).map((label) => ({ label })),
+  ];
+
+  const recommended = products.slice(0, 5);
 
   const handleAddToCart = (product: Product, e: React.MouseEvent<HTMLButtonElement>) => {
     if (!cartButtonRef.current) return;
@@ -765,12 +754,17 @@ export default function Home() {
     setTimeout(() => setCartBump(false), 400);
   };
 
-  const filtered = PRODUCTS.filter((p) => {
+  const filtered = products.filter((p) => {
     const matchesCategory =
       activeCategory === "All Products" || p.category === activeCategory;
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+  };
 
   return (
     <div className="flex flex-1 flex-col bg-section">
@@ -778,7 +772,7 @@ export default function Home() {
         isLoggedIn={isLoggedIn}
         onSignIn={() => router.push("/login")}
         onSignUp={() => router.push("/signup")}
-        onLogout={() => setIsLoggedIn(false)}
+        onLogout={handleLogout}
         cartButtonRef={cartButtonRef}
         cartCount={cartCount}
         cartBump={cartBump}
@@ -787,6 +781,7 @@ export default function Home() {
 
       <section id="shop" className="mx-auto mt-10 flex w-full max-w-6xl gap-10 px-4 sm:px-6">
         <CategorySidebar
+          categories={categories}
           active={activeCategory}
           onSelect={setActiveCategory}
           sort={sort}
@@ -794,12 +789,15 @@ export default function Home() {
         />
         <div className="min-w-0 flex-1">
           <MobileFilters
+            categories={categories}
             active={activeCategory}
             onSelect={setActiveCategory}
             sort={sort}
             onSort={setSort}
           />
-          {filtered.length === 0 ? (
+          {loadingProducts ? (
+            <p className="py-16 text-center text-sm text-muted">Loading products…</p>
+          ) : filtered.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted">
               No products match &ldquo;{search}&rdquo;.
             </p>
@@ -814,14 +812,13 @@ export default function Home() {
         </div>
       </section>
 
-      <Recommendations onAddToCart={handleAddToCart} />
+      <Recommendations products={recommended} onAddToCart={handleAddToCart} />
       <CtaBanner />
       <Footer />
 
-      {isLoggedIn &&
-        flyingItems.map((item) => (
-          <FlyToCart key={item.id} item={item} onDone={handleFlightDone} />
-        ))}
+      {flyingItems.map((item) => (
+        <FlyToCart key={item.id} item={item} onDone={handleFlightDone} />
+      ))}
     </div>
   );
 }

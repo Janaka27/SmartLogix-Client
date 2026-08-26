@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
+import { ensureProfile } from "@/utils/supabase/ensure-profile";
 import { CameraIcon, ChevronLeftIcon, DroneIcon } from "../icons";
 
 interface ProfileForm {
@@ -19,13 +22,13 @@ interface NotificationPrefs {
   flightAlerts: boolean;
 }
 
-const INITIAL_PROFILE: ProfileForm = {
-  fullName: "Ravidu Senevirathne",
-  email: "testing@gmail.com",
-  phone: "+94 71 234 5678",
-  street: "42 Galle Road",
-  city: "Colombo",
-  postalCode: "00300",
+const EMPTY_PROFILE: ProfileForm = {
+  fullName: "",
+  email: "",
+  phone: "",
+  street: "",
+  city: "",
+  postalCode: "",
 };
 
 const INITIAL_NOTIFICATIONS: NotificationPrefs = {
@@ -86,23 +89,107 @@ function Field({
 }
 
 export default function PreferencesPage() {
-  const [profile, setProfile] = useState<ProfileForm>(INITIAL_PROFILE);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<ProfileForm>(EMPTY_PROFILE);
+  const [initialProfile, setInitialProfile] = useState<ProfileForm>(EMPTY_PROFILE);
   const [notifications, setNotifications] = useState<NotificationPrefs>(INITIAL_NOTIFICATIONS);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      setUser(user);
+      await ensureProfile(supabase, user);
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, email, phone")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const loaded: ProfileForm = {
+        ...EMPTY_PROFILE,
+        fullName: data?.full_name ?? "",
+        email: data?.email ?? user.email ?? "",
+        phone: data?.phone ?? "",
+      };
+      setProfile(loaded);
+      setInitialProfile(loaded);
+      setLoading(false);
+    });
+  }, []);
 
   const updateField = (key: keyof ProfileForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setProfile((p) => ({ ...p, [key]: e.target.value }));
 
-  const handleSave = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSave = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!user) return;
+    setSaving(true);
+    setSaveError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: profile.fullName,
+        email: profile.email,
+        phone: profile.phone,
+      })
+      .eq("id", user.id);
+
+    setSaving(false);
+    if (error) {
+      setSaveError(error.message);
+      return;
+    }
+    setInitialProfile(profile);
     setSavedAt(Date.now());
     setTimeout(() => setSavedAt(null), 2500);
   };
 
   const handleDiscard = () => {
-    setProfile(INITIAL_PROFILE);
+    setProfile(initialProfile);
     setNotifications(INITIAL_NOTIFICATIONS);
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center bg-section">
+        <p className="text-sm text-muted">Loading preferences…</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-section px-4 text-center">
+        <h1 className="text-xl font-semibold text-black">Sign in to manage preferences</h1>
+        <div className="flex gap-3">
+          <Link
+            href="/login"
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/"
+            className="rounded-full border border-border bg-white px-6 py-2.5 text-sm font-medium text-black transition-colors hover:bg-surface"
+          >
+            Back to Shop
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col bg-section">
@@ -174,7 +261,8 @@ export default function PreferencesPage() {
         <section className="mt-6 rounded-2xl border border-border bg-white p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-black">Default Delivery Address</h2>
           <p className="mt-1 text-xs text-muted">
-            Used to check drone range and estimate delivery time at checkout.
+            Used to check drone range and estimate delivery time at checkout. Not yet saved to
+            your account — enter it fresh at checkout for now.
           </p>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -195,6 +283,7 @@ export default function PreferencesPage() {
 
         <section className="mt-6 rounded-2xl border border-border bg-white p-4 sm:p-6">
           <h2 className="text-sm font-semibold text-black">Notifications</h2>
+          <p className="mt-1 text-xs text-muted">Not yet saved to your account.</p>
           <div className="mt-2 divide-y divide-border">
             <Toggle
               label="Order & delivery updates"
@@ -217,12 +306,19 @@ export default function PreferencesPage() {
           </div>
         </section>
 
+        {saveError && (
+          <p className="mt-6 rounded-lg border border-border bg-surface p-3 text-sm font-medium text-black">
+            {saveError}
+          </p>
+        )}
+
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <button
             type="submit"
-            className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+            disabled={saving}
+            className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save Changes
+            {saving ? "Saving…" : "Save Changes"}
           </button>
           <button
             type="button"

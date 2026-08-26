@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { createClient } from "@/utils/supabase/client";
 
 function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -53,6 +54,7 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
 
   // Error States
+  const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
@@ -60,6 +62,7 @@ export default function LoginPage() {
     let isValid = true;
     setEmailError(null);
     setPasswordError(null);
+    setError(null);
 
     // Validate email presence and format
     if (!email.trim()) {
@@ -90,9 +93,19 @@ export default function LoginPage() {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      // Mock sign-in — not wired to a backend yet.
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
+
       router.push("/");
+      router.refresh();
     });
   };
 
@@ -116,6 +129,14 @@ export default function LoginPage() {
             Enter your credentials to access your account
           </p>
         </div>
+
+        {/* Global Error Banner */}
+        {error && (
+          <div className="rounded-lg border border-border bg-surface p-3 text-sm text-black">
+            <p className="font-medium">Sign-in failed</p>
+            <p className="mt-0.5 text-slate">{error}</p>
+          </div>
+        )}
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-6" noValidate>
