@@ -27,6 +27,12 @@ export interface DisplayProduct {
   eta: string;
   icon: ProductIcon;
   images: string[];
+  description: string;
+  stockQty: number;
+  weightKg: number;
+  lengthCm: number;
+  widthCm: number;
+  heightCm: number;
 }
 
 export interface DbProduct {
@@ -37,6 +43,11 @@ export interface DbProduct {
   weight_kg: number;
   status: string;
   images: string[] | null;
+  description: string | null;
+  stock_qty: number | null;
+  length_cm: number | null;
+  width_cm: number | null;
+  height_cm: number | null;
 }
 
 const KEYWORD_ICONS: [RegExp, ProductIcon][] = [
@@ -96,5 +107,11 @@ export function toDisplayProduct(p: DbProduct, sellerName: string): DisplayProdu
     eta: pseudoEta(p.id),
     icon: iconForProduct(p.name),
     images: p.images ?? [],
+    description: p.description ?? "",
+    stockQty: p.stock_qty ?? 0,
+    weightKg: p.weight_kg,
+    lengthCm: p.length_cm ?? 0,
+    widthCm: p.width_cm ?? 0,
+    heightCm: p.height_cm ?? 0,
   };
 }

@@ -111,17 +111,19 @@ function ProductCard({
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-3">
-      <ProductThumb product={product} />
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold text-black">{product.name}</h3>
-        <StarRating rating={product.rating} reviews={product.reviews} />
-        <p className="text-xs text-muted">
-          {product.seller} · ETA {product.eta}
-        </p>
-        <p className="pt-0.5 text-base font-semibold text-black">
-          ${product.price.toFixed(2)}
-        </p>
-      </div>
+      <Link href={`/product/${product.id}`} className="flex flex-col gap-3">
+        <ProductThumb product={product} />
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-semibold text-black">{product.name}</h3>
+          <StarRating rating={product.rating} reviews={product.reviews} />
+          <p className="text-xs text-muted">
+            {product.seller} · ETA {product.eta}
+          </p>
+          <p className="pt-0.5 text-base font-semibold text-black">
+            ${product.price.toFixed(2)}
+          </p>
+        </div>
+      </Link>
       <div className="grid grid-cols-2 gap-2 pt-1">
         <button
           onClick={(e) => onAddToCart?.(product, e)}
@@ -132,6 +134,24 @@ function ProductCard({
         <button className="rounded-full bg-primary py-2 text-xs font-medium text-white transition-colors hover:bg-primary-hover">
           Buy Now
         </button>
+      </div>
+    </div>
+  );
+}
+
+function ProductCardSkeleton() {
+  return (
+    <div className="flex animate-pulse flex-col gap-3 rounded-2xl border border-border bg-white p-3">
+      <div className="h-40 rounded-xl bg-surface" />
+      <div className="flex flex-col gap-2">
+        <div className="h-4 w-3/4 rounded bg-surface" />
+        <div className="h-3 w-1/2 rounded bg-surface" />
+        <div className="h-3 w-2/3 rounded bg-surface" />
+        <div className="h-5 w-1/3 rounded bg-surface" />
+      </div>
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className="h-8 rounded-full bg-surface" />
+        <div className="h-8 rounded-full bg-surface" />
       </div>
     </div>
   );
@@ -579,9 +599,11 @@ function Pagination() {
 function Recommendations({
   products,
   onAddToCart,
+  loading,
 }: {
   products: Product[];
   onAddToCart: (product: Product, e: React.MouseEvent<HTMLButtonElement>) => void;
+  loading: boolean;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -616,11 +638,17 @@ function Recommendations({
         ref={scrollerRef}
         className="flex gap-4 overflow-x-auto scroll-smooth pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden"
       >
-        {products.map((p) => (
-          <div key={p.id} className="w-64 shrink-0">
-            <ProductCard product={p} onAddToCart={onAddToCart} />
-          </div>
-        ))}
+        {loading
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="w-64 shrink-0">
+                <ProductCardSkeleton />
+              </div>
+            ))
+          : products.map((p) => (
+              <div key={p.id} className="w-64 shrink-0">
+                <ProductCard product={p} onAddToCart={onAddToCart} />
+              </div>
+            ))}
       </div>
     </section>
   );
@@ -877,7 +905,11 @@ export default function Home() {
             onSort={setSort}
           />
           {loadingProducts ? (
-            <p className="py-16 text-center text-sm text-muted">Loading products…</p>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted">
               No products match &ldquo;{search}&rdquo;.
@@ -893,7 +925,7 @@ export default function Home() {
         </div>
       </section>
 
-      <Recommendations products={recommended} onAddToCart={handleAddToCart} />
+      <Recommendations products={recommended} onAddToCart={handleAddToCart} loading={loadingProducts} />
       <CtaBanner />
       <Footer />
 

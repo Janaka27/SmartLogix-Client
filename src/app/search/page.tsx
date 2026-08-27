@@ -109,32 +109,34 @@ export default function SearchPage() {
                   key={product.id}
                   className="flex min-w-0 flex-col rounded-2xl border border-border bg-white p-3"
                 >
-                  <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl bg-surface sm:h-44">
-                    {product.images[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <Icon className="h-14 w-14 text-slate" />
-                    )}
-                  </div>
-                  <div className="flex flex-1 flex-col pt-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-black">{product.name}</h3>
-                      <span className="shrink-0 text-sm font-semibold text-black">
-                        ${product.price.toFixed(2)}
-                      </span>
+                  <Link href={`/product/${product.id}`} className="flex flex-col gap-0">
+                    <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl bg-surface sm:h-44">
+                      {product.images[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Icon className="h-14 w-14 text-slate" />
+                      )}
                     </div>
-                    <p className="mt-1 text-xs text-muted">
-                      {product.category} · {product.eta} by drone
-                    </p>
-                    <button className="mt-4 w-full rounded-full bg-primary py-2.5 text-xs font-medium text-white hover:bg-primary-hover">
-                      Add to cart
-                    </button>
-                  </div>
+                    <div className="flex flex-1 flex-col pt-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-black">{product.name}</h3>
+                        <span className="shrink-0 text-sm font-semibold text-black">
+                          ${product.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted">
+                        {product.category} · {product.eta} by drone
+                      </p>
+                    </div>
+                  </Link>
+                  <button className="mt-4 w-full rounded-full bg-primary py-2.5 text-xs font-medium text-white hover:bg-primary-hover">
+                    Add to cart
+                  </button>
                 </article>
               );
             })}
