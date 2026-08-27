@@ -7,7 +7,7 @@
 -- order_items/products with the function owner's privileges, bypassing RLS
 -- on those tables entirely, so it can no longer re-trigger orders' policy.
 
-create function private.is_seller_for_order(target_order_id uuid) returns boolean as $$
+create or replace function private.is_seller_for_order(target_order_id uuid) returns boolean as $$
   select exists (
     select 1
     from public.order_items oi
@@ -19,7 +19,7 @@ $$ language sql stable security definer set search_path = '';
 
 grant execute on function private.is_seller_for_order(uuid) to authenticated;
 
-drop policy "orders_select_buyer_seller_admin" on orders;
+drop policy if exists "orders_select_buyer_seller_admin" on orders;
 
 create policy "orders_select_buyer_seller_admin" on orders
   for select to authenticated

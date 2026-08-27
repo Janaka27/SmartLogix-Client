@@ -5,26 +5,30 @@ import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { AuthService } from "@/server/services/auth.service";
 import { OrderService } from "@/server/services/order.service";
-import { SEED_PRODUCTS, SEED_WAREHOUSE_ID } from "@/lib/mock-data/seed-products";
+import { ProductService } from "@/server/services/product.service";
+import type { ProductIcon } from "@/lib/products";
+import { SEED_WAREHOUSE_ID } from "@/lib/mock-data/seed-products";
+import { BoxIcon } from "@/components/icons";
 import {
-  CameraIcon,
   CashIcon,
   CheckCircleIcon,
-  CoffeeIcon,
   CreditCardIcon,
   DroneIcon,
-  EarbudsIcon,
-  HeadphonesIcon,
   LocationCrosshairIcon,
   MapPinIcon,
-  PhoneStandIcon,
-  PurifierIcon,
 } from "@/components/icons";
 import { CHECKOUT_STEPS, Stepper } from "@/components/checkout/Stepper";
+import { CardPaymentForm } from "@/components/checkout/CardPaymentForm";
 
-type IconKey = "phone" | "headphones" | "camera" | "earbuds" | "purifier" | "coffee";
 type PaymentMethod = "card" | "cod";
 type RangeStatus = "unchecked" | "checking" | "in-range" | "out-of-range";
+
+interface StoredCartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
 
 interface OrderItem {
   id: string;
@@ -33,27 +37,12 @@ interface OrderItem {
   price: number;
   weightKg: number;
   volumeCm3: number;
-  icon: IconKey;
+  icon: ProductIcon;
 }
-
-const ITEM_ICONS: Record<IconKey, (props: { className?: string }) => React.JSX.Element> = {
-  phone: PhoneStandIcon,
-  headphones: HeadphonesIcon,
-  camera: CameraIcon,
-  earbuds: EarbudsIcon,
-  purifier: PurifierIcon,
-  coffee: CoffeeIcon,
-};
-
-const ORDER_ITEMS: OrderItem[] = [
-  { id: SEED_PRODUCTS.p1.id, name: "Phone Stand Sakti", quantity: 1, price: 29.9, weightKg: SEED_PRODUCTS.p1.weightKg, volumeCm3: SEED_PRODUCTS.p1.volumeCm3, icon: "phone" },
-  { id: SEED_PRODUCTS.p2.id, name: "Headsound Pro", quantity: 2, price: 12.0, weightKg: SEED_PRODUCTS.p2.weightKg, volumeCm3: SEED_PRODUCTS.p2.volumeCm3, icon: "headphones" },
-  { id: SEED_PRODUCTS.p4.id, name: "CCTV Maling", quantity: 1, price: 50.0, weightKg: SEED_PRODUCTS.p4.weightKg, volumeCm3: SEED_PRODUCTS.p4.volumeCm3, icon: "camera" },
-  { id: SEED_PRODUCTS.p8.id, name: "Aer Purifier X1", quantity: 1, price: 79.0, weightKg: SEED_PRODUCTS.p8.weightKg, volumeCm3: SEED_PRODUCTS.p8.volumeCm3, icon: "purifier" },
-];
 
 const DELIVERY_FEE = 4.99;
 const HEAVY_SURCHARGE = 6.0;
+const HEAVY_THRESHOLD_KG = 5;
 
 function SectionCard({
   icon,
@@ -113,6 +102,10 @@ export default function CheckoutPage() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [loadingCart, setLoadingCart] = useState(true);
 
   useEffect(() => {
     AuthService.getUser().then((user) => {
@@ -121,8 +114,48 @@ export default function CheckoutPage() {
     });
   }, []);
 
+  useEffect(() => {
+    const storedItems = window.localStorage.getItem("smartlogix-cart");
+    let cartItems: StoredCartItem[] = [];
+    if (storedItems) {
+      try {
+        cartItems = JSON.parse(storedItems) as StoredCartItem[];
+      } catch {
+        window.localStorage.removeItem("smartlogix-cart");
+      }
+    }
+
+    if (cartItems.length === 0) {
+      setLoadingCart(false);
+      return;
+    }
+
+    Promise.all(
+      cartItems.map(async (item) => {
+        const product = await ProductService.getById(item.id);
+        return {
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          weightKg: product?.weightKg ?? 0,
+          volumeCm3: product ? product.lengthCm * product.widthCm * product.heightCm : 0,
+          icon: product?.icon ?? BoxIcon,
+        };
+      }),
+    ).then((items) => {
+      setOrderItems(items);
+      setLoadingCart(false);
+    });
+  }, []);
+
   const updateField = (key: keyof typeof address) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setAddress((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const clearCart = () => {
+    window.localStorage.removeItem("smartlogix-cart");
+    window.dispatchEvent(new Event("smartlogix-cart-updated"));
+  };
 
   const handleDetectLocation = () => {
     setRangeStatus("checking");
@@ -144,15 +177,17 @@ export default function CheckoutPage() {
     );
   };
 
-  const subtotal = ORDER_ITEMS.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const deliveryFee = DELIVERY_FEE + HEAVY_SURCHARGE;
+  const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const hasHeavyItem = orderItems.some((i) => i.weightKg > HEAVY_THRESHOLD_KG);
+  const deliveryFee = DELIVERY_FEE + (hasHeavyItem ? HEAVY_SURCHARGE : 0);
   const total = subtotal + deliveryFee;
-  const itemCount = ORDER_ITEMS.reduce((n, i) => n + i.quantity, 0);
-  const totalWeightKg = ORDER_ITEMS.reduce((sum, i) => sum + i.weightKg * i.quantity, 0);
-  const totalVolumeCm3 = ORDER_ITEMS.reduce((sum, i) => sum + i.volumeCm3 * i.quantity, 0);
+  const itemCount = orderItems.reduce((n, i) => n + i.quantity, 0);
+  const totalWeightKg = orderItems.reduce((sum, i) => sum + i.weightKg * i.quantity, 0);
+  const totalVolumeCm3 = orderItems.reduce((sum, i) => sum + i.volumeCm3 * i.quantity, 0);
 
   const canPlaceOrder = Boolean(
     user &&
+      orderItems.length > 0 &&
       address.fullName &&
       address.phone &&
       address.line1 &&
@@ -178,10 +213,25 @@ export default function CheckoutPage() {
         totalWeightKg,
         totalVolumeCm3,
         totalAmount: total,
-        items: ORDER_ITEMS,
+        items: orderItems,
       });
 
-      setPlacedOrderId(order.id);
+      if (payment === "cod") {
+        clearCart();
+        setPlacedOrderId(order.id);
+        return;
+      }
+
+      const res = await fetch("/api/payments/create-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not start payment.");
+
+      setPendingOrderId(order.id);
+      setClientSecret(data.clientSecret);
     } catch (err) {
       const message =
         err && typeof err === "object" && "message" in err && typeof err.message === "string"
@@ -193,7 +243,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (checkingAuth) {
+  if (checkingAuth || loadingCart) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center bg-section">
         <p className="text-sm text-muted">Loading checkout…</p>
@@ -222,6 +272,21 @@ export default function CheckoutPage() {
             Sign Up
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (orderItems.length === 0 && !placedOrderId) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-section px-4 text-center">
+        <h1 className="text-xl font-semibold text-black">Your cart is empty</h1>
+        <p className="max-w-sm text-sm text-muted">Add products to your cart before checking out.</p>
+        <Link
+          href="/"
+          className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+        >
+          Continue Shopping
+        </Link>
       </div>
     );
   }
@@ -373,12 +438,14 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
-              {payment === "card" && (
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Card number" placeholder="4242 4242 4242 4242" className="sm:col-span-2" />
-                  <Field label="Expiry" placeholder="MM/YY" />
-                  <Field label="CVV" placeholder="123" />
-                </div>
+              {payment === "card" && clientSecret && pendingOrderId && (
+                <CardPaymentForm
+                  clientSecret={clientSecret}
+                  onPaid={() => {
+                    clearCart();
+                    setPlacedOrderId(pendingOrderId);
+                  }}
+                />
               )}
             </SectionCard>
           </div>
@@ -388,8 +455,8 @@ export default function CheckoutPage() {
             <p className="mt-0.5 text-xs text-muted">{itemCount} item(s)</p>
 
             <div className="mt-4 flex flex-col gap-3 border-b border-border pb-4">
-              {ORDER_ITEMS.map((item) => {
-                const Icon = ITEM_ICONS[item.icon];
+              {orderItems.map((item) => {
+                const Icon = item.icon;
                 return (
                   <div key={item.id} className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface">
@@ -428,16 +495,29 @@ export default function CheckoutPage() {
                 {orderError}
               </p>
             )}
-            <button
-              onClick={handlePlaceOrder}
-              disabled={!canPlaceOrder || placingOrder}
-              className="mt-5 w-full rounded-full bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {placingOrder ? "Placing order…" : "Place Order"}
-            </button>
-            {!canPlaceOrder && (
-              <p className="mt-2 text-center text-[11px] text-muted">
-                Fill in your address and confirm your location to continue.
+            {!(payment === "card" && clientSecret) && (
+              <>
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={!canPlaceOrder || placingOrder}
+                  className="mt-5 w-full rounded-full bg-primary py-3 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {placingOrder
+                    ? "Placing order…"
+                    : payment === "card"
+                      ? "Continue to Payment"
+                      : "Place Order"}
+                </button>
+                {!canPlaceOrder && (
+                  <p className="mt-2 text-center text-[11px] text-muted">
+                    Fill in your address and confirm your location to continue.
+                  </p>
+                )}
+              </>
+            )}
+            {payment === "card" && clientSecret && (
+              <p className="mt-5 text-center text-[11px] text-muted">
+                Enter your card details above to complete payment.
               </p>
             )}
             <Link
