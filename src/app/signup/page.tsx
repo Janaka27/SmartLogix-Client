@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { ensureProfile } from "@/utils/supabase/ensure-profile";
+import { AuthService } from "@/server/services/auth.service";
+import { ProfileService } from "@/server/services/profile.service";
 
 function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -120,23 +120,17 @@ export default function SignupPage() {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      const supabase = createClient();
-      const { data, error: signupError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: { full_name: fullName.trim() },
-        },
-      });
-
-      if (signupError) {
-        setError(signupError.message);
+      let data;
+      try {
+        data = await AuthService.signUp(email.trim(), password, fullName.trim());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not sign up. Please try again.");
         return;
       }
 
       if (data.user && data.session) {
         // Email confirmation is off — we're already signed in.
-        await ensureProfile(supabase, data.user);
+        await ProfileService.ensureProfile(data.user);
         router.push("/");
         router.refresh();
       } else {

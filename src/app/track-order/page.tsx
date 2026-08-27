@@ -10,7 +10,7 @@ import {
   DroneIcon,
   MapPinIcon,
   SearchIcon,
-} from "../icons";
+} from "@/components/icons";
 
 interface StoredCartItem {
   quantity: number;

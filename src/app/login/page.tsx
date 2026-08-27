@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { AuthService } from "@/server/services/auth.service";
 
 function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -94,14 +94,10 @@ export default function LoginPage() {
     if (!validateForm()) return;
 
     startTransition(async () => {
-      const supabase = createClient({ rememberMe });
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-
-      if (authError) {
-        setError(authError.message);
+      try {
+        await AuthService.login(email.trim(), password, { rememberMe });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not sign in. Please try again.");
         return;
       }
 

@@ -14,8 +14,8 @@ import {
   PurifierIcon,
   TagIcon,
   TrashIcon,
-} from "../icons";
-import { Stepper } from "../components/Stepper";
+} from "@/components/icons";
+import { Stepper } from "@/components/checkout/Stepper";
 
 type WeightClass = "Standard" | "Heavy";
 type IconKey = "phone" | "headphones" | "camera" | "earbuds" | "purifier" | "coffee";

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { fetchActiveProducts, type DisplayProduct } from "@/lib/products";
-import { CartIcon, DroneIcon, SearchIcon } from "../icons";
+import { ProductService } from "@/server/services/product.service";
+import { type DisplayProduct } from "@/lib/products";
+import { CartIcon, DroneIcon, SearchIcon } from "@/components/icons";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -14,8 +14,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     let active = true;
-    const supabase = createClient();
-    fetchActiveProducts(supabase)
+    ProductService.getActive()
       .then((data) => {
         if (active) setProducts(data);
       })
@@ -110,8 +109,17 @@ export default function SearchPage() {
                   key={product.id}
                   className="flex min-w-0 flex-col rounded-2xl border border-border bg-white p-3"
                 >
-                  <div className="flex h-40 items-center justify-center rounded-xl bg-surface sm:h-44">
-                    <Icon className="h-14 w-14 text-slate" />
+                  <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl bg-surface sm:h-44">
+                    {product.images[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Icon className="h-14 w-14 text-slate" />
+                    )}
                   </div>
                   <div className="flex flex-1 flex-col pt-4">
                     <div className="flex items-start justify-between gap-3">

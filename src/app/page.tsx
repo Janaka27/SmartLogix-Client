@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { ensureProfile } from "@/utils/supabase/ensure-profile";
-import { fetchActiveProducts, type DisplayProduct } from "@/lib/products";
+import { AuthService } from "@/server/services/auth.service";
+import { ProfileService } from "@/server/services/profile.service";
+import { ProductService } from "@/server/services/product.service";
+import { type DisplayProduct } from "@/lib/products";
 import {
   CartIcon,
   ChevronDownIcon,
@@ -23,7 +24,7 @@ import {
   StarIcon,
   XIcon,
   XSocialIcon,
-} from "./icons";
+} from "@/components/icons";
 
 type Product = DisplayProduct;
 
@@ -65,8 +66,17 @@ const SORTS = ["New Arrival", "Best Seller", "On Discount"];
 function ProductThumb({ product }: { product: Product }) {
   const Icon = product.icon;
   return (
-    <div className="relative flex h-40 items-center justify-center rounded-xl bg-surface">
-      <Icon className="h-14 w-14 text-slate" />
+    <div className="relative flex h-40 items-center justify-center overflow-hidden rounded-xl bg-surface">
+      {product.images[0] ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={product.images[0]}
+          alt={product.name}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <Icon className="h-14 w-14 text-slate" />
+      )}
       <span
         className={`absolute right-2 top-2 rounded-full px-2.5 py-1 text-[11px] font-medium ${
           product.weightClass === "Heavy"
@@ -721,18 +731,16 @@ export default function Home() {
   const cartButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    AuthService.getSession().then((session) => {
       setIsLoggedIn(!!session);
-      if (session?.user) void ensureProfile(supabase, session.user);
+      if (session?.user) void ProfileService.ensureProfile(session.user);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = AuthService.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session);
-      if (session?.user) void ensureProfile(supabase, session.user);
+      if (session?.user) void ProfileService.ensureProfile(session.user);
     });
 
     return () => subscription.unsubscribe();
@@ -752,9 +760,8 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-    const supabase = createClient();
 
-    fetchActiveProducts(supabase)
+    ProductService.getActive()
       .then((data) => {
         if (active) setProducts(data);
       })
@@ -837,8 +844,7 @@ export default function Home() {
   });
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await AuthService.logout();
   };
 
   return (

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/utils/supabase/client";
-import { ensureProfile } from "@/utils/supabase/ensure-profile";
-import { CameraIcon, ChevronLeftIcon, DroneIcon } from "../icons";
+import { AuthService } from "@/server/services/auth.service";
+import { ProfileService } from "@/server/services/profile.service";
+import { CameraIcon, ChevronLeftIcon, DroneIcon } from "@/components/icons";
 
 interface ProfileForm {
   fullName: string;
@@ -99,21 +99,15 @@ export default function PreferencesPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    AuthService.getUser().then(async (user) => {
       if (!user) {
         setLoading(false);
         return;
       }
       setUser(user);
-      await ensureProfile(supabase, user);
+      await ProfileService.ensureProfile(user);
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, email, phone")
-        .eq("id", user.id)
-        .maybeSingle();
+      const data = await ProfileService.getMyProfile(user.id);
 
       const loaded: ProfileForm = {
         ...EMPTY_PROFILE,
@@ -136,21 +130,15 @@ export default function PreferencesPage() {
     setSaving(true);
     setSaveError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: profile.fullName,
-        email: profile.email,
-        phone: profile.phone,
-      })
-      .eq("id", user.id);
-
-    setSaving(false);
-    if (error) {
-      setSaveError(error.message);
+    try {
+      await ProfileService.updateMyProfile(user.id, profile);
+    } catch (err) {
+      setSaving(false);
+      setSaveError(err instanceof Error ? err.message : "Could not save preferences.");
       return;
     }
+
+    setSaving(false);
     setInitialProfile(profile);
     setSavedAt(Date.now());
     setTimeout(() => setSavedAt(null), 2500);

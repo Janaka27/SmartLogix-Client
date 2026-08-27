@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/utils/supabase/client";
-import { SEED_PRODUCTS, SEED_WAREHOUSE_ID } from "@/lib/seed-products";
+import { AuthService } from "@/server/services/auth.service";
+import { OrderService } from "@/server/services/order.service";
+import { SEED_PRODUCTS, SEED_WAREHOUSE_ID } from "@/lib/mock-data/seed-products";
 import {
   CameraIcon,
   CashIcon,
@@ -18,8 +19,8 @@ import {
   MapPinIcon,
   PhoneStandIcon,
   PurifierIcon,
-} from "../icons";
-import { CHECKOUT_STEPS, Stepper } from "../components/Stepper";
+} from "@/components/icons";
+import { CHECKOUT_STEPS, Stepper } from "@/components/checkout/Stepper";
 
 type IconKey = "phone" | "headphones" | "camera" | "earbuds" | "purifier" | "coffee";
 type PaymentMethod = "card" | "cod";
@@ -114,8 +115,7 @@ export default function CheckoutPage() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    AuthService.getUser().then((user) => {
       setUser(user);
       setCheckingAuth(false);
     });
@@ -167,39 +167,19 @@ export default function CheckoutPage() {
     setOrderError(null);
 
     try {
-      const supabase = createClient();
-      const { data: order, error: orderInsertError } = await supabase
-        .from("orders")
-        .insert({
-          buyer_id: user.id,
-          warehouse_id: SEED_WAREHOUSE_ID,
-          status: "pending",
-          delivery_lat: coords.lat,
-          delivery_lng: coords.lng,
-          delivery_address: address.line1,
-          delivery_city: address.city,
-          delivery_postal_code: address.postalCode || null,
-          total_weight_kg: totalWeightKg,
-          total_volume_cm3: totalVolumeCm3,
-          total_amount: total,
-        })
-        .select("id")
-        .single();
-
-      if (orderInsertError) throw orderInsertError;
-
-      const { error: itemsInsertError } = await supabase.from("order_items").insert(
-        ORDER_ITEMS.map((item) => ({
-          order_id: order.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-          weight_kg: item.weightKg,
-          volume_cm3: item.volumeCm3,
-        })),
-      );
-
-      if (itemsInsertError) throw itemsInsertError;
+      const order = await OrderService.placeOrder({
+        buyerId: user.id,
+        warehouseId: SEED_WAREHOUSE_ID,
+        deliveryLat: coords.lat,
+        deliveryLng: coords.lng,
+        deliveryAddress: address.line1,
+        deliveryCity: address.city,
+        deliveryPostalCode: address.postalCode || null,
+        totalWeightKg,
+        totalVolumeCm3,
+        totalAmount: total,
+        items: ORDER_ITEMS,
+      });
 
       setPlacedOrderId(order.id);
     } catch (err) {

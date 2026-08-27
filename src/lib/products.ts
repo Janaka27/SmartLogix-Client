@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   BoxIcon,
   CameraIcon,
@@ -11,7 +10,7 @@ import {
   PurifierIcon,
   SpeakerIcon,
   VacuumIcon,
-} from "@/app/icons";
+} from "@/components/icons";
 
 export type WeightClass = "Standard" | "Heavy";
 export type ProductIcon = (props: { className?: string }) => React.JSX.Element;
@@ -27,15 +26,17 @@ export interface DisplayProduct {
   weightClass: WeightClass;
   eta: string;
   icon: ProductIcon;
+  images: string[];
 }
 
-interface DbProduct {
+export interface DbProduct {
   id: string;
   name: string;
   category: string | null;
   price: number;
   weight_kg: number;
   status: string;
+  images: string[] | null;
 }
 
 const KEYWORD_ICONS: [RegExp, ProductIcon][] = [
@@ -94,19 +95,6 @@ export function toDisplayProduct(p: DbProduct, sellerName: string): DisplayProdu
     weightClass: p.weight_kg > 5 ? "Heavy" : "Standard",
     eta: pseudoEta(p.id),
     icon: iconForProduct(p.name),
+    images: p.images ?? [],
   };
-}
-
-export async function fetchActiveProducts(
-  supabase: SupabaseClient,
-): Promise<DisplayProduct[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, category, price, weight_kg, status")
-    .eq("status", "active")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  return ((data ?? []) as DbProduct[]).map((p) => toDisplayProduct(p, "SmartLogix Marketplace"));
 }
