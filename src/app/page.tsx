@@ -122,9 +122,11 @@ function StarRating({ rating, reviews }: { rating: number; reviews: number }) {
 function ProductCard({
   product,
   onAddToCart,
+  onBuyNow,
 }: {
   product: Product;
   onAddToCart?: (product: Product, e: React.MouseEvent<HTMLButtonElement>) => void;
+  onBuyNow?: (product: Product) => void;
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-3">
@@ -148,7 +150,10 @@ function ProductCard({
         >
           Add to Cart
         </button>
-        <button className="rounded-full bg-primary py-2 text-xs font-medium text-white transition-colors hover:bg-primary-hover">
+        <button
+          onClick={() => onBuyNow?.(product)}
+          className="rounded-full bg-primary py-2 text-xs font-medium text-white transition-colors hover:bg-primary-hover"
+        >
           Buy Now
         </button>
       </div>
@@ -629,10 +634,12 @@ function Pagination({
 function Recommendations({
   products,
   onAddToCart,
+  onBuyNow,
   loading,
 }: {
   products: Product[];
   onAddToCart: (product: Product, e: React.MouseEvent<HTMLButtonElement>) => void;
+  onBuyNow: (product: Product) => void;
   loading: boolean;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -676,7 +683,7 @@ function Recommendations({
             ))
           : products.map((p) => (
               <div key={p.id} className="w-64 shrink-0">
-                <ProductCard product={p} onAddToCart={onAddToCart} />
+                <ProductCard product={p} onAddToCart={onAddToCart} onBuyNow={onBuyNow} />
               </div>
             ))}
       </div>
@@ -843,9 +850,11 @@ export default function Home() {
 
   const recommended = products.slice(0, 5);
 
-  const handleAddToCart = (product: Product, e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!cartButtonRef.current) return;
+  const goToLoginWithRedirect = () => {
+    router.push(`/login?redirect=${encodeURIComponent("/")}`);
+  };
 
+  const addProductToCart = (product: Product) => {
     const storedItems = window.localStorage.getItem("smartlogix-cart");
     let items: StoredCartItem[] = [];
     if (storedItems) {
@@ -875,6 +884,16 @@ export default function Home() {
     window.localStorage.setItem("smartlogix-cart", JSON.stringify(items));
     setCartCount(items.reduce((count, item) => count + item.quantity, 0));
     window.dispatchEvent(new Event("smartlogix-cart-updated"));
+  };
+
+  const handleAddToCart = (product: Product, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!isLoggedIn) {
+      goToLoginWithRedirect();
+      return;
+    }
+    if (!cartButtonRef.current) return;
+
+    addProductToCart(product);
 
     const btnRect = e.currentTarget.getBoundingClientRect();
     const cartRect = cartButtonRef.current.getBoundingClientRect();
@@ -887,6 +906,15 @@ export default function Home() {
         to: { x: cartRect.left + cartRect.width / 2, y: cartRect.top + cartRect.height / 2 },
       },
     ]);
+  };
+
+  const handleBuyNow = (product: Product) => {
+    if (!isLoggedIn) {
+      goToLoginWithRedirect();
+      return;
+    }
+    addProductToCart(product);
+    router.push("/checkout");
   };
 
   const handleFlightDone = (id: string) => {
@@ -975,7 +1003,7 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {paginated.map((p) => (
-                <ProductCard key={p.id} product={p} onAddToCart={handleAddToCart} />
+                <ProductCard key={p.id} product={p} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} />
               ))}
             </div>
           )}
@@ -985,7 +1013,12 @@ export default function Home() {
         </div>
       </section>
 
-      <Recommendations products={recommended} onAddToCart={handleAddToCart} loading={loadingProducts} />
+      <Recommendations
+        products={recommended}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        loading={loadingProducts}
+      />
       <CtaBanner />
       <Footer />
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AuthService } from "@/server/services/auth.service";
 import { ProductService } from "@/server/services/product.service";
 import type { DisplayProduct } from "@/lib/products";
 import {
@@ -149,6 +150,17 @@ function ProductDetailView({ id }: { id: string }) {
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    AuthService.getSession().then((session) => setIsLoggedIn(!!session));
+
+    const {
+      data: { subscription },
+    } = AuthService.onAuthStateChange((_event, session) => setIsLoggedIn(!!session));
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -177,6 +189,10 @@ function ProductDetailView({ id }: { id: string }) {
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (!isLoggedIn) {
+      router.push(`/login?redirect=${encodeURIComponent(`/product/${product.id}`)}`);
+      return;
+    }
     addToStoredCart(product, quantity);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
@@ -184,6 +200,10 @@ function ProductDetailView({ id }: { id: string }) {
 
   const handleBuyNow = () => {
     if (!product) return;
+    if (!isLoggedIn) {
+      router.push(`/login?redirect=${encodeURIComponent(`/product/${product.id}`)}`);
+      return;
+    }
     addToStoredCart(product, quantity);
     router.push("/checkout");
   };

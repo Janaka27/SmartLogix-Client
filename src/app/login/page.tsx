@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useTransition } from "react";
 import { AuthService } from "@/server/services/auth.service";
 
 function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -47,7 +47,19 @@ function EyeOffIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={<div className="flex min-h-screen items-center justify-center bg-section" />}
+    >
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -101,7 +113,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
+      router.push(redirectTo);
       router.refresh();
     });
   };
@@ -275,7 +287,11 @@ export default function LoginPage() {
           <p className="text-sm text-slate">
             Don&apos;t have an account?{" "}
             <Link
-              href="/signup"
+              href={
+                redirectTo !== "/"
+                  ? `/signup?redirect=${encodeURIComponent(redirectTo)}`
+                  : "/signup"
+              }
               className="font-semibold text-black hover:underline transition-all"
             >
               Sign Up

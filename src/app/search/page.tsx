@@ -1,16 +1,84 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AuthService } from "@/server/services/auth.service";
 import { ProductService } from "@/server/services/product.service";
 import { type DisplayProduct } from "@/lib/products";
 import { CartIcon, DroneIcon, SearchIcon } from "@/components/icons";
 
+type IconKey = "phone" | "headphones" | "earbuds" | "camera" | "purifier" | "coffee";
+
+interface StoredCartItem {
+  id: string;
+  name: string;
+  seller: string;
+  price: number;
+  quantity: number;
+  stock: number;
+  weightClass: DisplayProduct["weightClass"];
+  eta: string;
+  icon: IconKey;
+}
+
+function cartIconKeyForName(name: string): IconKey {
+  if (/phone.?stand|phone holder/i.test(name)) return "phone";
+  if (/headphone|headset/i.test(name)) return "headphones";
+  if (/earbud|tws/i.test(name)) return "earbuds";
+  if (/camera|cctv/i.test(name)) return "camera";
+  if (/purifier/i.test(name)) return "purifier";
+  return "coffee";
+}
+
+function addToStoredCart(product: DisplayProduct) {
+  const storedItems = window.localStorage.getItem("smartlogix-cart");
+  let items: StoredCartItem[] = [];
+  if (storedItems) {
+    try {
+      items = JSON.parse(storedItems) as StoredCartItem[];
+    } catch {
+      window.localStorage.removeItem("smartlogix-cart");
+    }
+  }
+
+  const existingItem = items.find((item) => item.id === product.id);
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    items.push({
+      id: product.id,
+      name: product.name,
+      seller: product.seller,
+      price: product.price,
+      quantity: 1,
+      stock: product.stockQty,
+      weightClass: product.weightClass,
+      eta: product.eta,
+      icon: cartIconKeyForName(product.name),
+    });
+  }
+  window.localStorage.setItem("smartlogix-cart", JSON.stringify(items));
+  window.dispatchEvent(new Event("smartlogix-cart-updated"));
+}
+
 export default function SearchPage() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All products");
   const [products, setProducts] = useState<DisplayProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    AuthService.getSession().then((session) => setIsLoggedIn(!!session));
+
+    const {
+      data: { subscription },
+    } = AuthService.onAuthStateChange((_event, session) => setIsLoggedIn(!!session));
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -26,6 +94,14 @@ export default function SearchPage() {
       active = false;
     };
   }, []);
+
+  const handleAddToCart = (product: DisplayProduct) => {
+    if (!isLoggedIn) {
+      router.push(`/login?redirect=${encodeURIComponent("/search")}`);
+      return;
+    }
+    addToStoredCart(product);
+  };
 
   const categories = [
     "All products",
@@ -134,7 +210,10 @@ export default function SearchPage() {
                       </p>
                     </div>
                   </Link>
-                  <button className="mt-4 w-full rounded-full bg-primary py-2.5 text-xs font-medium text-white hover:bg-primary-hover">
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    className="mt-4 w-full rounded-full bg-primary py-2.5 text-xs font-medium text-white hover:bg-primary-hover"
+                  >
                     Add to cart
                   </button>
                 </article>

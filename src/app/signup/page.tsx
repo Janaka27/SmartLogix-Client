@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useTransition } from "react";
 import { AuthService } from "@/server/services/auth.service";
 import { ProfileService } from "@/server/services/profile.service";
 
@@ -48,7 +48,19 @@ function EyeOffIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={<div className="flex min-h-screen items-center justify-center bg-section" />}
+    >
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -131,7 +143,7 @@ export default function SignupPage() {
       if (data.user && data.session) {
         // Email confirmation is off — we're already signed in.
         await ProfileService.ensureProfile(data.user);
-        router.push("/");
+        router.push(redirectTo);
         router.refresh();
       } else {
         setSuccessMessage(
@@ -140,6 +152,9 @@ export default function SignupPage() {
       }
     });
   };
+
+  const loginHref =
+    redirectTo !== "/" ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-section px-4 py-4 sm:px-6 lg:px-8">
@@ -170,7 +185,7 @@ export default function SignupPage() {
             </div>
             <div className="border-t border-border pt-1">
               <Link
-                href="/login"
+                href={loginHref}
                 className="inline-flex items-center text-xs font-bold text-black hover:underline"
               >
                 Proceed to Sign In &rarr;
@@ -360,7 +375,7 @@ export default function SignupPage() {
             <div className="pt-3 text-center">
               <p className="text-sm text-slate">
                 Already have an account?{" "}
-                <Link href="/login" className="font-semibold text-black hover:underline transition-all">
+                <Link href={loginHref} className="font-semibold text-black hover:underline transition-all">
                   Sign In
                 </Link>
               </p>
