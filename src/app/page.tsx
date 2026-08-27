@@ -62,6 +62,23 @@ function cartIconKeyForName(name: string) {
 }
 
 const SORTS = ["New Arrival", "Best Seller", "On Discount"];
+const PRODUCTS_PER_PAGE = 12;
+
+function getPageList(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages: (number | "…")[] = [1];
+  if (current > 3) pages.push("…");
+
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+
+  if (current < total - 2) pages.push("…");
+  pages.push(total);
+
+  return pages;
+}
 
 function ProductThumb({ product }: { product: Product }) {
   const Icon = product.icon;
@@ -556,14 +573,25 @@ function MobileFilters({
   );
 }
 
-function Pagination() {
-  const [page, setPage] = useState(1);
-  const pages = [1, 2, 3, "…", 8, 9, 10] as const;
+function Pagination({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  const pages = getPageList(page, totalPages);
+
   return (
     <div className="mt-8 flex items-center justify-between gap-2 text-sm text-slate">
       <button
-        onClick={() => setPage((p) => Math.max(1, p - 1))}
-        className="flex shrink-0 items-center gap-1 hover:text-black"
+        onClick={() => onPageChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        className="flex shrink-0 items-center gap-1 hover:text-black disabled:pointer-events-none disabled:opacity-40"
       >
         <ChevronLeftIcon className="h-4 w-4" /> <span className="hidden sm:inline">Previous</span>
       </button>
@@ -576,7 +604,8 @@ function Pagination() {
           ) : (
             <button
               key={p}
-              onClick={() => setPage(p)}
+              onClick={() => onPageChange(p)}
+              aria-current={page === p ? "page" : undefined}
               className={`h-8 w-8 shrink-0 rounded-lg text-sm transition-colors ${
                 page === p ? "bg-primary text-white" : "hover:bg-surface"
               }`}
@@ -587,8 +616,9 @@ function Pagination() {
         )}
       </div>
       <button
-        onClick={() => setPage((p) => p + 1)}
-        className="flex shrink-0 items-center gap-1 hover:text-black"
+        onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+        disabled={page === totalPages}
+        className="flex shrink-0 items-center gap-1 hover:text-black disabled:pointer-events-none disabled:opacity-40"
       >
         <span className="hidden sm:inline">Next</span> <ChevronRightIcon className="h-4 w-4" />
       </button>
@@ -750,6 +780,7 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [sort, setSort] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -871,6 +902,33 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice(
+    (safePage - 1) * PRODUCTS_PER_PAGE,
+    safePage * PRODUCTS_PER_PAGE,
+  );
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleCategorySelect = (value: string) => {
+    setActiveCategory(value);
+    setPage(1);
+  };
+
+  const handleSortChange = (value: string | null) => {
+    setSort(value);
+    setPage(1);
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const handleLogout = async () => {
     await AuthService.logout();
   };
@@ -886,23 +944,23 @@ export default function Home() {
         cartCount={cartCount}
         cartBump={cartBump}
       />
-      <Hero search={search} onSearchChange={setSearch} />
+      <Hero search={search} onSearchChange={handleSearchChange} />
 
       <section id="shop" className="mx-auto mt-10 flex w-full max-w-6xl gap-10 px-4 sm:px-6">
         <CategorySidebar
           categories={categories}
           active={activeCategory}
-          onSelect={setActiveCategory}
+          onSelect={handleCategorySelect}
           sort={sort}
-          onSort={setSort}
+          onSort={handleSortChange}
         />
         <div className="min-w-0 flex-1">
           <MobileFilters
             categories={categories}
             active={activeCategory}
-            onSelect={setActiveCategory}
+            onSelect={handleCategorySelect}
             sort={sort}
-            onSort={setSort}
+            onSort={handleSortChange}
           />
           {loadingProducts ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -916,12 +974,14 @@ export default function Home() {
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((p) => (
+              {paginated.map((p) => (
                 <ProductCard key={p.id} product={p} onAddToCart={handleAddToCart} />
               ))}
             </div>
           )}
-          <Pagination />
+          {!loadingProducts && filtered.length > 0 && (
+            <Pagination page={safePage} totalPages={totalPages} onPageChange={handlePageChange} />
+          )}
         </div>
       </section>
 
