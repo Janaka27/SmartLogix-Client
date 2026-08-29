@@ -293,7 +293,6 @@ const NAV_LINKS = [
   { label: "Home", href: "#" },
   { label: "Shop", href: "#shop" },
   { label: "Track Order", href: "/track-order" },
-  { label: "Map", href: "/map" },
 ];
 
 function MobileNavMenu() {
@@ -740,6 +739,7 @@ function Footer() {
             <ul className="flex flex-col gap-2 text-sm text-slate">
               <li><a href="#" className="hover:text-black">Blog</a></li>
               <li><a href="#" className="hover:text-black">Meet The Team</a></li>
+              <li><Link href="/map" className="hover:text-black">Our Warehouse</Link></li>
               <li><a href="#" className="hover:text-black">Contact Us</a></li>
             </ul>
           </div>

@@ -1,11 +1,28 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect } from "react";
 
-export default function MapComponent({ warehouses }: { warehouses: any[] }) {
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+export default function MapComponent({ 
+  warehouses, 
+  dropPoint, 
+  onMapClick 
+}: { 
+  warehouses: any[], 
+  dropPoint?: {lat: number, lng: number} | null,
+  onMapClick?: (lat: number, lng: number) => void
+}) {
   // Center of Sri Lanka roughly
   const center: [number, number] = [7.8731, 80.7718];
 
@@ -15,6 +32,7 @@ export default function MapComponent({ warehouses }: { warehouses: any[] }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
       {warehouses.map((w) => (
         <Marker
           key={w.id}
@@ -34,6 +52,21 @@ export default function MapComponent({ warehouses }: { warehouses: any[] }) {
           }
         />
       ))}
+      {dropPoint && (
+        <Marker
+          position={[dropPoint.lat, dropPoint.lng]}
+          icon={
+            new L.DivIcon({
+              html: `<div class="flex h-5 w-5 items-center justify-center rounded-full bg-black text-white shadow-md ring-4 ring-black/30" style="transform: translate(-50%, -100%);">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                     </div>`,
+              className: "custom-marker-icon bg-transparent",
+              iconSize: [0, 0],
+              iconAnchor: [0, 0],
+            })
+          }
+        />
+      )}
     </MapContainer>
   );
 }

@@ -108,7 +108,6 @@ export default function TrackOrderPage() {
             <Link href="/" className="hover:text-black">Home</Link>
             <Link href="/#shop" className="hover:text-black">Shop</Link>
             <span className="text-black">Track order</span>
-            <Link href="/map" className="hover:text-black">Map</Link>
           </nav>
           <Link
             href="/cart"

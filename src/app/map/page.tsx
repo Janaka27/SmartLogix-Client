@@ -25,6 +25,30 @@ function getStoredCartCount() {
 export default function MapPage() {
   const [cartCount, setCartCount] = useState(0);
   const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [showPanel, setShowPanel] = useState(false);
+  const [dropPoint, setDropPoint] = useState<{ lat: number; lng: number } | null>(null);
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setDropPoint({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.error("Error getting location:", err)
+      );
+    }
+  };
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setDropPoint({ lat, lng });
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("fromCheckout") === "true") {
+        setShowPanel(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     WarehousService.getAll().then((data) => {
@@ -63,7 +87,6 @@ export default function MapPage() {
             <Link href="/" className="hover:text-black">Home</Link>
             <Link href="/#shop" className="hover:text-black">Shop</Link>
             <Link href="/track-order" className="hover:text-black">Track order</Link>
-            <span className="text-black">Map</span>
           </nav>
           <Link
             href="/cart"
@@ -80,7 +103,8 @@ export default function MapPage() {
 
       <section className="flex-1 min-h-0 relative z-0 flex flex-col md:flex-row">
         {/* Side Panel */}
-        <aside className="scrollbar-none [&::-webkit-scrollbar]:hidden w-full shrink-0 border-r border-border bg-white p-5 shadow-sm md:w-72 lg:w-[320px] overflow-y-auto z-10 flex flex-col">
+        {showPanel && (
+          <aside className="scrollbar-none [&::-webkit-scrollbar]:hidden w-full shrink-0 border-r border-border bg-white p-5 shadow-sm md:w-72 lg:w-[320px] overflow-y-auto z-10 flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <span className="h-2.5 w-2.5 rounded-full bg-primary shrink-0" />
             <h1 className="text-xl font-bold text-black tracking-tight">Find you Nearest Warehouse</h1>
@@ -93,17 +117,31 @@ export default function MapPage() {
           <div className="flex flex-col gap-1.5 mb-5">
             <label htmlFor="source-warehouse" className="text-sm font-bold text-black">Source warehouse</label>
             <select id="source-warehouse" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary">
-              <option>Negombo Depot</option>
-              <option>Colombo Central</option>
+              {warehouses.map((w) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
             </select>
           </div>
 
-          <div className="flex flex-col gap-1 mb-6">
+          <div className="flex flex-col gap-2 mb-6">
             <span className="text-sm font-bold text-black">Delivery point</span>
-            <span className="text-sm text-slate">7.3398, 80.4247</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate">
+                {dropPoint ? `${dropPoint.lat.toFixed(4)}, ${dropPoint.lng.toFixed(4)}` : "Not set"}
+              </span>
+              <button
+                onClick={handleGetCurrentLocation}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Use current location
+              </button>
+            </div>
           </div>
 
-          <button className="w-full rounded-lg border border-border bg-white py-2.5 text-sm font-bold text-black transition-colors hover:bg-surface mb-6">
+          <button
+            onClick={() => setDropPoint(null)}
+            className="w-full rounded-lg border border-border bg-white py-2.5 text-sm font-bold text-black transition-colors hover:bg-surface mb-6"
+          >
             Reset
           </button>
 
@@ -129,10 +167,15 @@ export default function MapPage() {
             </p>
           </div>
         </aside>
+        )}
 
         {/* Map Area */}
         <div className="flex-1 relative">
-          <DynamicMap warehouses={warehouses} />
+          <DynamicMap 
+            warehouses={warehouses} 
+            dropPoint={dropPoint} 
+            onMapClick={showPanel ? handleMapClick : undefined}
+          />
 
           <div className="absolute bottom-6 left-6 rounded-2xl bg-white/90 p-4 text-sm font-medium shadow-xl backdrop-blur pointer-events-none z-[1000]">
             <h2 className="text-base font-bold text-black mb-1">Our Warehouses</h2>

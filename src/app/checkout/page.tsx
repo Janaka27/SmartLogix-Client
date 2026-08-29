@@ -383,13 +383,21 @@ export default function CheckoutPage() {
                     <p className="text-xs text-muted">Required to verify drone-range coverage.</p>
                   </div>
                 </div>
-                <button
-                  onClick={handleDetectLocation}
-                  disabled={rangeStatus === "checking"}
-                  className="shrink-0 rounded-full border border-border bg-white px-4 py-2 text-xs font-medium text-black transition-colors hover:bg-surface disabled:opacity-50"
-                >
-                  {rangeStatus === "checking" ? "Locating…" : "Use my current location"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDetectLocation}
+                    disabled={rangeStatus === "checking"}
+                    className="shrink-0 rounded-full border border-border bg-white px-4 py-2 text-xs font-medium text-black transition-colors hover:bg-surface disabled:opacity-50"
+                  >
+                    {rangeStatus === "checking" ? "Locating…" : "Use my current location"}
+                  </button>
+                  <Link
+                    href="/map?fromCheckout=true"
+                    className="shrink-0 rounded-full border border-border bg-white px-4 py-2 text-xs font-medium text-black transition-colors hover:bg-surface"
+                  >
+                    Find nearest warehouse
+                  </Link>
+                </div>
               </div>
 
               {rangeStatus === "in-range" && (

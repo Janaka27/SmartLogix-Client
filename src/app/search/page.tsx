@@ -126,7 +126,6 @@ export default function SearchPage() {
             <Link href="/" className="hover:text-black">Home</Link>
             <span className="text-black">Shop</span>
             <Link href="/track-order" className="hover:text-black text-muted">Track order</Link>
-            <Link href="/map" className="hover:text-black">Map</Link>
           </nav>
           <Link href="/cart" aria-label="Open cart" className="shrink-0 text-slate hover:text-black">
             <CartIcon className="h-5 w-5" />
