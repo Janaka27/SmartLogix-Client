@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { CartIcon, MapPinIcon, DroneIcon } from "@/components/icons";
 import { WarehousService } from "@/server/services/warehouse.service";
+import { getRoute, type GraphNode } from "@/lib/dsa/dijkstra";
 import dynamic from "next/dynamic";
 
 const DynamicMap = dynamic(() => import("./MapComponent"), { ssr: false });
@@ -27,6 +28,23 @@ export default function MapPage() {
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [showPanel, setShowPanel] = useState(false);
   const [dropPoint, setDropPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [sourceWarehouseId, setSourceWarehouseId] = useState("");
+  const [route, setRoute] = useState<{ path: GraphNode[]; distance: number; lastLegDistance: number; corridorDistance: number } | null>(null);
+
+  useEffect(() => {
+    if (warehouses.length > 0 && !sourceWarehouseId) {
+      setSourceWarehouseId(warehouses[0].id);
+    }
+  }, [warehouses, sourceWarehouseId]);
+
+  useEffect(() => {
+    if (warehouses.length > 0 && sourceWarehouseId && dropPoint) {
+      const calcRoute = getRoute(warehouses, sourceWarehouseId, dropPoint);
+      setRoute(calcRoute);
+    } else {
+      setRoute(null);
+    }
+  }, [warehouses, sourceWarehouseId, dropPoint]);
 
   const handleGetCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -116,7 +134,12 @@ export default function MapPage() {
 
           <div className="flex flex-col gap-1.5 mb-5">
             <label htmlFor="source-warehouse" className="text-sm font-bold text-black">Source warehouse</label>
-            <select id="source-warehouse" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary">
+            <select 
+              id="source-warehouse" 
+              value={sourceWarehouseId}
+              onChange={(e) => setSourceWarehouseId(e.target.value)}
+              className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary"
+            >
               {warehouses.map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
@@ -148,10 +171,16 @@ export default function MapPage() {
           <div className="h-px w-full bg-border mb-6" />
 
           <div className="flex flex-col gap-3 text-sm mb-6">
-            <p className="text-slate"><strong className="text-black">Route:</strong> Negombo Depot &rarr; Gampaha Depot &rarr; Kandy Depot &rarr; Delivery point</p>
-            <p className="text-slate"><strong className="text-black">Corridor distance:</strong> 91.0 km</p>
-            <p className="text-slate"><strong className="text-black">Last-mile leg:</strong> 23.7 km</p>
-            <p className="text-slate"><strong className="text-black">Total:</strong> 114.7 km</p>
+            {route ? (
+              <>
+                <p className="text-slate"><strong className="text-black">Route:</strong> {route.path.map(n => n.name).join(" \u2192 ")}</p>
+                <p className="text-slate"><strong className="text-black">Corridor distance:</strong> {route.corridorDistance.toFixed(1)} km</p>
+                <p className="text-slate"><strong className="text-black">Last-mile leg:</strong> {route.lastLegDistance.toFixed(1)} km</p>
+                <p className="text-slate"><strong className="text-black">Total:</strong> {route.distance.toFixed(1)} km</p>
+              </>
+            ) : (
+              <p className="text-slate">Select a source warehouse and a delivery point to see the route.</p>
+            )}
           </div>
 
           <div className="h-px w-full bg-border mb-6" />
@@ -175,6 +204,7 @@ export default function MapPage() {
             warehouses={warehouses} 
             dropPoint={dropPoint} 
             onMapClick={showPanel ? handleMapClick : undefined}
+            route={route}
           />
 
           <div className="absolute bottom-6 left-6 rounded-2xl bg-white/90 p-4 text-sm font-medium shadow-xl backdrop-blur pointer-events-none z-[1000]">

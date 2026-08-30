@@ -1,6 +1,6 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect } from "react";
@@ -17,11 +17,13 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
 export default function MapComponent({ 
   warehouses, 
   dropPoint, 
-  onMapClick 
+  onMapClick,
+  route
 }: { 
   warehouses: any[], 
   dropPoint?: {lat: number, lng: number} | null,
-  onMapClick?: (lat: number, lng: number) => void
+  onMapClick?: (lat: number, lng: number) => void,
+  route?: { path: {lat: number, lng: number}[] } | null
 }) {
   // Center of Sri Lanka roughly
   const center: [number, number] = [7.8731, 80.7718];
@@ -52,6 +54,12 @@ export default function MapComponent({
           }
         />
       ))}
+      {route && (
+        <Polyline 
+          positions={route.path.map((node) => [node.lat, node.lng])} 
+          pathOptions={{ color: "orange", weight: 4 }} 
+        />
+      )}
       {dropPoint && (
         <Marker
           position={[dropPoint.lat, dropPoint.lng]}
