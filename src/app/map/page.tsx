@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { CartIcon, MapPinIcon, DroneIcon } from "@/components/icons";
 import { WarehousService } from "@/server/services/warehouse.service";
+import { getRoute, buildGraph } from "@/lib/dsa/dijkstra";
 import dynamic from "next/dynamic";
 
 const DynamicMap = dynamic(() => import("./MapComponent"), { ssr: false });
@@ -27,6 +28,9 @@ export default function MapPage() {
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [showPanel, setShowPanel] = useState(false);
   const [dropPoint, setDropPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [sourceWarehouseId, setSourceWarehouseId] = useState<string>("");
+  const [routeResult, setRouteResult] = useState<any>(null);
+  const [graphEdges, setGraphEdges] = useState<any[]>([]);
 
   const handleGetCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -54,8 +58,22 @@ export default function MapPage() {
     WarehousService.getAll().then((data) => {
       console.log("warehouses", data);
       setWarehouses(data);
+      if (data.length > 0) {
+        setSourceWarehouseId(data[0].id);
+        const { edges } = buildGraph(data);
+        setGraphEdges(edges);
+      }
     });
   }, []);
+
+  useEffect(() => {
+    if (warehouses.length > 0 && sourceWarehouseId && dropPoint) {
+      const res = getRoute(warehouses, sourceWarehouseId, dropPoint);
+      setRouteResult(res);
+    } else {
+      setRouteResult(null);
+    }
+  }, [warehouses, sourceWarehouseId, dropPoint]);
 
   useEffect(() => {
     const syncCartCount = () => setCartCount(getStoredCartCount());
@@ -116,7 +134,12 @@ export default function MapPage() {
 
           <div className="flex flex-col gap-1.5 mb-5">
             <label htmlFor="source-warehouse" className="text-sm font-bold text-black">Source warehouse</label>
-            <select id="source-warehouse" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary">
+            <select 
+              id="source-warehouse" 
+              className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary"
+              value={sourceWarehouseId}
+              onChange={(e) => setSourceWarehouseId(e.target.value)}
+            >
               {warehouses.map((w) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
@@ -147,23 +170,31 @@ export default function MapPage() {
 
           <div className="h-px w-full bg-border mb-6" />
 
-          <div className="flex flex-col gap-3 text-sm mb-6">
-            <p className="text-slate"><strong className="text-black">Route:</strong> Negombo Depot &rarr; Gampaha Depot &rarr; Kandy Depot &rarr; Delivery point</p>
-            <p className="text-slate"><strong className="text-black">Corridor distance:</strong> 91.0 km</p>
-            <p className="text-slate"><strong className="text-black">Last-mile leg:</strong> 23.7 km</p>
-            <p className="text-slate"><strong className="text-black">Total:</strong> 114.7 km</p>
-          </div>
+          {routeResult ? (
+            <div className="flex flex-col gap-3 text-sm mb-6">
+              <p className="text-slate">
+                <strong className="text-black">Route:</strong>{" "}
+                {routeResult.path.map((n: any) => n.name).join(" \u2192 ")}
+              </p>
+              <p className="text-slate"><strong className="text-black">Corridor distance:</strong> {routeResult.corridorDistance.toFixed(1)} km</p>
+              <p className="text-slate"><strong className="text-black">Last-mile leg:</strong> {routeResult.lastLegDistance.toFixed(1)} km</p>
+              <p className="text-slate"><strong className="text-black">Total:</strong> {routeResult.distance.toFixed(1)} km</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 text-sm mb-6">
+              <p className="text-slate">Select a source and drop point to see the route.</p>
+            </div>
+          )}
 
           <div className="h-px w-full bg-border mb-6" />
 
           <div className="text-xs text-slate">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
-              <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-slate shrink-0" /> Warehouse</div>
-              <div className="flex items-center gap-1.5"><MapPinIcon className="h-3 w-3 text-red-500" /> Delivery point</div>
-              <div className="flex items-center gap-1.5"><DroneIcon className="h-3.5 w-3.5 text-slate" /> Launch point</div>
+              <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-primary shrink-0" /> Warehouse</div>
+              <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-black shrink-0" /> Delivery point</div>
             </div>
             <p>
-              Dashed gray = all pre-defined corridors. Solid orange = active route.
+              Dashed gray = all pre-defined corridors. Solid green = active route.
             </p>
           </div>
         </aside>
@@ -175,6 +206,8 @@ export default function MapPage() {
             warehouses={warehouses} 
             dropPoint={dropPoint} 
             onMapClick={showPanel ? handleMapClick : undefined}
+            routePath={routeResult?.path}
+            allEdges={graphEdges}
           />
 
           <div className="absolute bottom-6 left-6 rounded-2xl bg-white/90 p-4 text-sm font-medium shadow-xl backdrop-blur pointer-events-none z-[1000]">

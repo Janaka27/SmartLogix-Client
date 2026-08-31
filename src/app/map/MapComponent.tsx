@@ -1,6 +1,6 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect } from "react";
@@ -17,11 +17,15 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
 export default function MapComponent({ 
   warehouses, 
   dropPoint, 
-  onMapClick 
+  onMapClick,
+  routePath,
+  allEdges
 }: { 
   warehouses: any[], 
   dropPoint?: {lat: number, lng: number} | null,
-  onMapClick?: (lat: number, lng: number) => void
+  onMapClick?: (lat: number, lng: number) => void,
+  routePath?: any[],
+  allEdges?: any[]
 }) {
   // Center of Sri Lanka roughly
   const center: [number, number] = [7.8731, 80.7718];
@@ -33,6 +37,35 @@ export default function MapComponent({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
+      
+      {allEdges?.map((edge, i) => {
+        const fromNode = warehouses.find(w => w.id === edge.from);
+        const toNode = warehouses.find(w => w.id === edge.to);
+        
+        if (!fromNode || !toNode) return null;
+        
+        return (
+          <Polyline
+            key={`edge-${i}`}
+            positions={[
+              [fromNode.latitude, fromNode.longitude], 
+              [toNode.latitude, toNode.longitude]
+            ]}
+            color="#cbd5e1"
+            weight={3}
+            dashArray="10, 10"
+          />
+        );
+      })}
+
+      {routePath && routePath.length > 1 && (
+        <Polyline
+          positions={routePath.map((node: any) => [node.lat, node.lng])}
+          color="#03a038ff"
+          weight={4}
+        />
+      )}
+
       {warehouses.map((w) => (
         <Marker
           key={w.id}
