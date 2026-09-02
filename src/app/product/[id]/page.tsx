@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import { AuthService } from "@/server/services/auth.service";
 import { ProductService } from "@/server/services/product.service";
 import type { DisplayProduct } from "@/lib/products";
+import { Navbar } from "@/components/Navbar";
 import {
   BoxIcon,
-  CartIcon,
   CheckCircleIcon,
   ChevronLeftIcon,
   DroneIcon,
@@ -38,20 +38,42 @@ function cartIconKeyForName(name: string): IconKey {
   return "coffee";
 }
 
-function ProductPageShell({ children }: { children: React.ReactNode }) {
+function getStoredCartCount() {
+  const storedItems = window.localStorage.getItem("smartlogix-cart");
+  if (!storedItems) return 0;
+
+  try {
+    const items = JSON.parse(storedItems) as StoredCartItem[];
+    return items.reduce((count, item) => count + Math.max(0, item.quantity || 0), 0);
+  } catch {
+    return 0;
+  }
+}
+
+function ProductPageShell({
+  isLoggedIn,
+  cartCount,
+  onSignIn,
+  onSignUp,
+  onLogout,
+  children,
+}: {
+  isLoggedIn: boolean;
+  cartCount: number;
+  onSignIn: () => void;
+  onSignUp: () => void;
+  onLogout: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <div className="bg-section">
-      <header className="border-b border-border bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex min-w-0 items-center gap-2 text-black">
-            <DroneIcon className="h-6 w-6 shrink-0" />
-            <span className="truncate text-lg font-semibold tracking-tight">SmartLogix</span>
-          </Link>
-          <Link href="/cart" aria-label="Open cart" className="shrink-0 text-slate hover:text-black">
-            <CartIcon className="h-5 w-5" />
-          </Link>
-        </div>
-      </header>
+      <Navbar
+        isLoggedIn={isLoggedIn}
+        onSignIn={onSignIn}
+        onSignUp={onSignUp}
+        onLogout={onLogout}
+        cartCount={cartCount}
+      />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <Link
@@ -151,6 +173,7 @@ function ProductDetailView({ id }: { id: string }) {
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     AuthService.getSession().then((session) => setIsLoggedIn(!!session));
@@ -160,6 +183,18 @@ function ProductDetailView({ id }: { id: string }) {
     } = AuthService.onAuthStateChange((_event, session) => setIsLoggedIn(!!session));
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const syncCartCount = () => setCartCount(getStoredCartCount());
+    window.addEventListener("storage", syncCartCount);
+    window.addEventListener("smartlogix-cart-updated", syncCartCount);
+    syncCartCount();
+
+    return () => {
+      window.removeEventListener("storage", syncCartCount);
+      window.removeEventListener("smartlogix-cart-updated", syncCartCount);
+    };
   }, []);
 
   useEffect(() => {
@@ -208,9 +243,21 @@ function ProductDetailView({ id }: { id: string }) {
     router.push("/checkout");
   };
 
+  const handleLogout = async () => {
+    await AuthService.logout();
+  };
+
+  const shellProps = {
+    isLoggedIn,
+    cartCount,
+    onSignIn: () => router.push(`/login?redirect=${encodeURIComponent(`/product/${id}`)}`),
+    onSignUp: () => router.push(`/signup?redirect=${encodeURIComponent(`/product/${id}`)}`),
+    onLogout: handleLogout,
+  };
+
   if (loading) {
     return (
-      <ProductPageShell>
+      <ProductPageShell {...shellProps}>
         <ProductDetailSkeleton />
       </ProductPageShell>
     );
@@ -218,7 +265,7 @@ function ProductDetailView({ id }: { id: string }) {
 
   if (notFound || !product) {
     return (
-      <ProductPageShell>
+      <ProductPageShell {...shellProps}>
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 px-4 text-center">
           <h1 className="text-xl font-semibold text-black">Product not found</h1>
           <p className="max-w-sm text-sm text-muted">
@@ -240,7 +287,7 @@ function ProductDetailView({ id }: { id: string }) {
   const hasDimensions = product.lengthCm > 0 && product.widthCm > 0 && product.heightCm > 0;
 
   return (
-    <ProductPageShell>
+    <ProductPageShell {...shellProps}>
       <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-2">
           <div className="flex flex-col gap-3">
             <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface">
