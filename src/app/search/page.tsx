@@ -125,7 +125,7 @@ export default function SearchPage() {
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate md:flex">
             <Link href="/" className="hover:text-black">Home</Link>
             <span className="text-black">Shop</span>
-            <span className="text-muted">Track order</span>
+            <Link href="/track-order" className="hover:text-black text-muted">Track order</Link>
           </nav>
           <Link href="/cart" aria-label="Open cart" className="shrink-0 text-slate hover:text-black">
             <CartIcon className="h-5 w-5" />

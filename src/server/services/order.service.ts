@@ -21,6 +21,8 @@ export interface PlaceOrderInput {
   totalWeightKg: number;
   totalVolumeCm3: number;
   totalAmount: number;
+  isUrgent: boolean;
+  urgentFee: number;
   items: OrderItemInput[];
 }
 
@@ -40,6 +42,8 @@ export const OrderService = {
         total_weight_kg: input.totalWeightKg,
         total_volume_cm3: input.totalVolumeCm3,
         total_amount: input.totalAmount,
+        is_urgent: input.isUrgent,
+        urgent_fee: input.urgentFee,
       })
       .select("id")
       .single();

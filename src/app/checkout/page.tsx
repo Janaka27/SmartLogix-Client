@@ -16,6 +16,7 @@ import {
   DroneIcon,
   LocationCrosshairIcon,
   MapPinIcon,
+  ZapIcon,
 } from "@/components/icons";
 import { CHECKOUT_STEPS, Stepper } from "@/components/checkout/Stepper";
 import { CardPaymentForm } from "@/components/checkout/CardPaymentForm";
@@ -43,6 +44,7 @@ interface OrderItem {
 const DELIVERY_FEE = 4.99;
 const HEAVY_SURCHARGE = 6.0;
 const HEAVY_THRESHOLD_KG = 5;
+const URGENT_DELIVERY_FEE = 9.99;
 
 function SectionCard({
   icon,
@@ -99,6 +101,7 @@ export default function CheckoutPage() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [rangeStatus, setRangeStatus] = useState<RangeStatus>("unchecked");
   const [payment, setPayment] = useState<PaymentMethod>("card");
+  const [urgentDelivery, setUrgentDelivery] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
@@ -180,7 +183,8 @@ export default function CheckoutPage() {
   const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const hasHeavyItem = orderItems.some((i) => i.weightKg > HEAVY_THRESHOLD_KG);
   const deliveryFee = DELIVERY_FEE + (hasHeavyItem ? HEAVY_SURCHARGE : 0);
-  const total = subtotal + deliveryFee;
+  const urgentFee = urgentDelivery ? URGENT_DELIVERY_FEE : 0;
+  const total = subtotal + deliveryFee + urgentFee;
   const itemCount = orderItems.reduce((n, i) => n + i.quantity, 0);
   const totalWeightKg = orderItems.reduce((sum, i) => sum + i.weightKg * i.quantity, 0);
   const totalVolumeCm3 = orderItems.reduce((sum, i) => sum + i.volumeCm3 * i.quantity, 0);
@@ -213,6 +217,8 @@ export default function CheckoutPage() {
         totalWeightKg,
         totalVolumeCm3,
         totalAmount: total,
+        isUrgent: urgentDelivery,
+        urgentFee,
         items: orderItems,
       });
 
@@ -383,13 +389,21 @@ export default function CheckoutPage() {
                     <p className="text-xs text-muted">Required to verify drone-range coverage.</p>
                   </div>
                 </div>
-                <button
-                  onClick={handleDetectLocation}
-                  disabled={rangeStatus === "checking"}
-                  className="shrink-0 rounded-full border border-border bg-white px-4 py-2 text-xs font-medium text-black transition-colors hover:bg-surface disabled:opacity-50"
-                >
-                  {rangeStatus === "checking" ? "Locating…" : "Use my current location"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDetectLocation}
+                    disabled={rangeStatus === "checking"}
+                    className="shrink-0 rounded-full border border-border bg-white px-4 py-2 text-xs font-medium text-black transition-colors hover:bg-surface disabled:opacity-50"
+                  >
+                    {rangeStatus === "checking" ? "Locating…" : "Use my current location"}
+                  </button>
+                  <Link
+                    href="/map?fromCheckout=true"
+                    className="shrink-0 rounded-full border border-border bg-white px-4 py-2 text-xs font-medium text-black transition-colors hover:bg-surface"
+                  >
+                    Find nearest warehouse
+                  </Link>
+                </div>
               </div>
 
               {rangeStatus === "in-range" && (
@@ -404,6 +418,36 @@ export default function CheckoutPage() {
                   instead.
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={() => setUrgentDelivery((prev) => !prev)}
+                className={`mt-3 flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors ${
+                  urgentDelivery ? "border-black bg-surface" : "border-border hover:bg-surface"
+                }`}
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-charcoal text-white">
+                  <ZapIcon className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-black">Urgent delivery</p>
+                  <p className="text-xs text-muted">
+                    Jump the queue for priority drone dispatch — get it faster.
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-sm font-semibold text-black">
+                    +${URGENT_DELIVERY_FEE.toFixed(2)}
+                  </span>
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                      urgentDelivery ? "border-black bg-black text-white" : "border-border bg-white"
+                    }`}
+                  >
+                    {urgentDelivery && <CheckCircleIcon className="h-3.5 w-3.5" />}
+                  </span>
+                </div>
+              </button>
             </SectionCard>
 
             <SectionCard
@@ -483,6 +527,12 @@ export default function CheckoutPage() {
                 <span>Delivery fee</span>
                 <span className="text-black">${deliveryFee.toFixed(2)}</span>
               </div>
+              {urgentDelivery && (
+                <div className="flex items-center justify-between text-slate">
+                  <span>Urgent delivery</span>
+                  <span className="text-black">${urgentFee.toFixed(2)}</span>
+                </div>
+              )}
             </div>
 
             <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-base font-semibold text-black">

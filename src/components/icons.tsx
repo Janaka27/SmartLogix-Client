@@ -239,6 +239,14 @@ export function CheckCircleIcon(props: IconProps) {
   );
 }
 
+export function ZapIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12.5 3 5 13.5h5.5L11 21l7.5-10.5H13z" />
+    </svg>
+  );
+}
+
 export function CreditCardIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
