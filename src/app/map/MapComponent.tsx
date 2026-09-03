@@ -31,7 +31,15 @@ export default function MapComponent({
   const center: [number, number] = [7.8731, 80.7718];
 
   return (
-    <MapContainer center={center} zoom={7} scrollWheelZoom={true} className="absolute inset-0 grayscale-[.35] z-0">
+    <MapContainer 
+      center={center} 
+      zoom={7} 
+      scrollWheelZoom={true} 
+      className="absolute inset-0 grayscale-[.35] z-0"
+      maxBounds={[[5.5, 79.0], [10.0, 82.5]]}
+      maxBoundsViscosity={1.0}
+      minZoom={7}
+    >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
