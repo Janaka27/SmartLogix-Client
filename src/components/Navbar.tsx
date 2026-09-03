@@ -4,7 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { AuthService } from "@/server/services/auth.service";
+import { ProfileService } from "@/server/services/profile.service";
 import {
+  BoxIcon,
   CartIcon,
   ChevronDownIcon,
   LogoutIcon,
@@ -66,7 +69,37 @@ function MobileNavMenu() {
 
 function ProfileMenu({ onLogout }: { onLogout: () => void }) {
   const [open, setOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [initials, setInitials] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProfile = async () => {
+      const user = await AuthService.getUser();
+      if (!user || !active) return;
+      const profile = await ProfileService.getMyProfile(user.id);
+      if (!active) return;
+      setAvatarUrl(profile?.avatar_url ?? null);
+      setInitials(
+        (profile?.full_name ?? "")
+          .split(" ")
+          .filter(Boolean)
+          .map((n: string) => n[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase(),
+      );
+    };
+
+    loadProfile();
+    window.addEventListener("smartlogix-profile-updated", loadProfile);
+    return () => {
+      active = false;
+      window.removeEventListener("smartlogix-profile-updated", loadProfile);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -94,7 +127,14 @@ function ProfileMenu({ onLogout }: { onLogout: () => void }) {
         aria-expanded={open}
         className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-1.5 hover:bg-surface"
       >
-        <div className="h-8 w-8 rounded-full bg-surface" aria-hidden />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface text-xs font-semibold text-slate">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            initials
+          )}
+        </div>
         <ChevronDownIcon
           className={`h-4 w-4 text-slate transition-transform ${open ? "rotate-180" : ""}`}
         />
@@ -105,6 +145,15 @@ function ProfileMenu({ onLogout }: { onLogout: () => void }) {
           role="menu"
           className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-border bg-white py-1.5 shadow-lg"
         >
+          <Link
+            href="/orders"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-slate hover:bg-surface hover:text-black"
+          >
+            <BoxIcon className="h-4 w-4" />
+            My Orders
+          </Link>
           <Link
             href="/preferences"
             role="menuitem"

@@ -221,16 +221,41 @@ function Hero({
 }) {
   return (
     <section className="relative">
-      <div className="relative h-64 overflow-hidden bg-linear-to-br from-charcoal-soft via-charcoal to-black sm:h-80">
-        <DroneIcon className="absolute right-10 top-8 h-10 w-10 text-white/30 sm:right-24 sm:top-12" />
-        <DroneIcon className="absolute left-10 bottom-10 h-6 w-6 text-white/20 sm:left-32" />
-        <h1
-          className="absolute inset-0 flex select-none items-center justify-center overflow-hidden text-6xl font-extrabold leading-none text-transparent sm:text-8xl md:text-[9rem]"
-          style={{ WebkitTextStroke: "2px rgba(255,255,255,0.5)" }}
+      <div className="relative overflow-hidden bg-section">
+        <div
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl"
           aria-hidden
-        >
-          SHOP
-        </h1>
+        />
+
+        <div className="relative mx-auto flex max-w-2xl flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-20 lg:py-24">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <DroneIcon className="h-3.5 w-3.5" />
+            Drone Delivery Marketplace
+          </span>
+          <h1 className="mt-5 text-4xl font-bold leading-tight text-black sm:text-5xl">
+            Say hello to shopping at drone speed.
+          </h1>
+          <p className="mt-3 text-base text-muted sm:text-lg">
+            Order from nearby sellers and watch your drone in real time, from
+            warehouse dispatch to doorstep landing.
+          </p>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#shop"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+            >
+              Shop Now
+              <ChevronRightIcon className="h-4 w-4" />
+            </a>
+            <Link
+              href="/track-order"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-6 py-2.5 text-sm font-medium text-black transition-colors hover:bg-surface"
+            >
+              Track an Order
+              <ChevronRightIcon className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="relative mx-auto -mt-10 max-w-6xl px-4 sm:px-6">

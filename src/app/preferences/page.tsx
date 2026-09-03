@@ -236,6 +236,7 @@ export default function PreferencesPage() {
         ...profile,
         avatarUrl: nextAvatarUrl ?? undefined,
       });
+      window.dispatchEvent(new Event("smartlogix-profile-updated"));
 
       setAvatarUrl(nextAvatarUrl);
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
