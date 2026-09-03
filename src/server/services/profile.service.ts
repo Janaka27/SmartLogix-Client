@@ -7,6 +7,7 @@ export interface ProfileInput {
   fullName: string;
   email: string;
   phone: string;
+  avatarUrl?: string;
 }
 
 export const ProfileService = {
@@ -37,7 +38,7 @@ export const ProfileService = {
   async getMyProfile(userId: string) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("full_name, email, phone")
+      .select("full_name, email, phone, avatar_url")
       .eq("id", userId)
       .maybeSingle();
 
@@ -48,15 +49,17 @@ export const ProfileService = {
     return data;
   },
 
+  // Email is intentionally left out here — it's the login credential, so
+  // changing it goes through Supabase auth's own confirmation flow, not a
+  // plain profile update. The preferences form keeps the field read-only.
   async updateMyProfile(userId: string, updates: ProfileInput) {
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: updates.fullName,
-        email: updates.email,
-        phone: updates.phone,
-      })
-      .eq("id", userId);
+    const payload: Record<string, unknown> = {
+      full_name: updates.fullName,
+      phone: updates.phone,
+    };
+    if (updates.avatarUrl !== undefined) payload.avatar_url = updates.avatarUrl;
+
+    const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
 
     if (error) {
       console.error("Error updating profile:", error.message);
