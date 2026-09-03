@@ -33,6 +33,7 @@ export interface DisplayProduct {
   lengthCm: number;
   widthCm: number;
   heightCm: number;
+  warehouseId: string;
 }
 
 export interface DbProduct {
@@ -48,6 +49,7 @@ export interface DbProduct {
   length_cm: number | null;
   width_cm: number | null;
   height_cm: number | null;
+  warehouse_id: string;
 }
 
 const KEYWORD_ICONS: [RegExp, ProductIcon][] = [
@@ -113,5 +115,6 @@ export function toDisplayProduct(p: DbProduct, sellerName: string): DisplayProdu
     lengthCm: p.length_cm ?? 0,
     widthCm: p.width_cm ?? 0,
     heightCm: p.height_cm ?? 0,
+    warehouseId: p.warehouse_id,
   };
 }

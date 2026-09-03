@@ -2,7 +2,7 @@
 
 import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
+import L, { type LatLngBoundsExpression } from "leaflet";
 
 interface TrackingPoint {
   lat: number;
@@ -61,15 +61,15 @@ export default function TrackingMap({
   dronePosition: { lat: number; lng: number };
   headingDegrees?: number;
 }) {
-  const center: [number, number] = [
-    (origin.lat + destination.lat) / 2,
-    (origin.lng + destination.lng) / 2,
+  const bounds: LatLngBoundsExpression = [
+    [origin.lat, origin.lng],
+    [destination.lat, destination.lng],
   ];
 
   return (
     <MapContainer
-      center={center}
-      zoom={12}
+      bounds={bounds}
+      boundsOptions={{ padding: [56, 56] }}
       scrollWheelZoom={true}
       className="absolute inset-0 grayscale-[.35] z-0"
     >
@@ -78,15 +78,18 @@ export default function TrackingMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* Full planned path */}
+      {/* Full planned path — bold + dark so it stays visible against light map tiles */}
       <Polyline
         positions={[
           [origin.lat, origin.lng],
           [destination.lat, destination.lng],
         ]}
-        color="#cbd5e1"
-        weight={3}
-        dashArray="10, 10"
+        color="#1f2937"
+        weight={4}
+        opacity={0.7}
+        dashArray="2, 10"
+        dashOffset="0"
+        lineCap="round"
       />
 
       {/* Flown so far */}
@@ -95,8 +98,9 @@ export default function TrackingMap({
           [origin.lat, origin.lng],
           [dronePosition.lat, dronePosition.lng],
         ]}
-        color="#03a038ff"
-        weight={4}
+        color="#03a038"
+        weight={5}
+        lineCap="round"
       />
 
       <Marker position={[origin.lat, origin.lng]} icon={warehouseIcon(origin.label)} />

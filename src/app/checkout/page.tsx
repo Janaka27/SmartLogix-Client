@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { AuthService } from "@/server/services/auth.service";
 import { OrderService } from "@/server/services/order.service";
 import { ProductService } from "@/server/services/product.service";
 import type { ProductIcon } from "@/lib/products";
-import { SEED_WAREHOUSE_ID } from "@/lib/mock-data/seed-products";
-import { BoxIcon } from "@/components/icons";
 import {
   CashIcon,
   CheckCircleIcon,
@@ -40,6 +38,7 @@ interface OrderItem {
   weightKg: number;
   volumeCm3: number;
   icon: ProductIcon;
+  warehouseId: string;
 }
 
 const DELIVERY_FEE = 1497;
@@ -130,25 +129,27 @@ export default function CheckoutPage() {
     }
 
     if (cartItems.length === 0) {
-      setLoadingCart(false);
+      Promise.resolve().then(() => setLoadingCart(false));
       return;
     }
 
     Promise.all(
       cartItems.map(async (item) => {
         const product = await ProductService.getById(item.id);
+        if (!product) return null; // product removed since it was added to the cart
         return {
           id: item.id,
           name: item.name,
           quantity: item.quantity,
           price: item.price,
-          weightKg: product?.weightKg ?? 0,
-          volumeCm3: product ? product.lengthCm * product.widthCm * product.heightCm : 0,
-          icon: product?.icon ?? BoxIcon,
+          weightKg: product.weightKg,
+          volumeCm3: product.lengthCm * product.widthCm * product.heightCm,
+          icon: product.icon,
+          warehouseId: product.warehouseId,
         };
       }),
     ).then((items) => {
-      setOrderItems(items);
+      setOrderItems(items.filter((item): item is OrderItem => item !== null));
       setLoadingCart(false);
     });
   }, []);
@@ -190,9 +191,18 @@ export default function CheckoutPage() {
   const totalWeightKg = orderItems.reduce((sum, i) => sum + i.weightKg * i.quantity, 0);
   const totalVolumeCm3 = orderItems.reduce((sum, i) => sum + i.volumeCm3 * i.quantity, 0);
 
+  // An order ships from a single warehouse, so a cart spanning more than one
+  // (i.e. items from different sellers) can't be placed as one order today.
+  const warehouseIds = useMemo(
+    () => Array.from(new Set(orderItems.map((i) => i.warehouseId))),
+    [orderItems],
+  );
+  const hasMixedWarehouses = warehouseIds.length > 1;
+
   const canPlaceOrder = Boolean(
     user &&
       orderItems.length > 0 &&
+      !hasMixedWarehouses &&
       address.fullName &&
       address.phone &&
       address.line1 &&
@@ -202,14 +212,14 @@ export default function CheckoutPage() {
   );
 
   const handlePlaceOrder = async () => {
-    if (!canPlaceOrder || !user || !coords) return;
+    if (!canPlaceOrder || !user || !coords || warehouseIds.length !== 1) return;
     setPlacingOrder(true);
     setOrderError(null);
 
     try {
       const order = await OrderService.placeOrder({
         buyerId: user.id,
-        warehouseId: SEED_WAREHOUSE_ID,
+        warehouseId: warehouseIds[0],
         deliveryLat: coords.lat,
         deliveryLng: coords.lng,
         deliveryAddress: address.line1,
@@ -499,6 +509,14 @@ export default function CheckoutPage() {
             <h2 className="text-base font-semibold text-black">Order Summary</h2>
             <p className="mt-0.5 text-xs text-muted">{itemCount} item(s)</p>
 
+            {hasMixedWarehouses && (
+              <p className="mt-3 rounded-lg border border-border bg-surface p-3 text-xs font-medium text-black">
+                Your cart has items from {warehouseIds.length} different sellers. Each order ships
+                from one warehouse, so please check out one seller&apos;s items at a time — remove
+                the others from your cart to continue.
+              </p>
+            )}
+
             <div className="mt-4 flex flex-col gap-3 border-b border-border pb-4">
               {orderItems.map((item) => {
                 const Icon = item.icon;
@@ -559,7 +577,7 @@ export default function CheckoutPage() {
                       ? "Continue to Payment"
                       : "Place Order"}
                 </button>
-                {!canPlaceOrder && (
+                {!canPlaceOrder && !hasMixedWarehouses && (
                   <p className="mt-2 text-center text-[11px] text-muted">
                     Fill in your address and confirm your location to continue.
                   </p>
