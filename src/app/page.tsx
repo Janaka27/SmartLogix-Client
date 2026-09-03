@@ -7,6 +7,7 @@ import { AuthService } from "@/server/services/auth.service";
 import { ProfileService } from "@/server/services/profile.service";
 import { ProductService } from "@/server/services/product.service";
 import { type DisplayProduct } from "@/lib/products";
+import { formatLKR } from "@/lib/currency";
 import { Navbar } from "@/components/Navbar";
 import {
   ChevronLeftIcon,
@@ -133,7 +134,7 @@ function ProductCard({
             {product.seller} · ETA {product.eta}
           </p>
           <p className="pt-0.5 text-base font-semibold text-black">
-            ${product.price.toFixed(2)}
+            {formatLKR(product.price)}
           </p>
         </div>
       </Link>

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AuthService } from "@/server/services/auth.service";
 import { ProductService } from "@/server/services/product.service";
 import type { DisplayProduct } from "@/lib/products";
+import { formatLKR } from "@/lib/currency";
 import { Navbar } from "@/components/Navbar";
 import {
   BoxIcon,
@@ -346,7 +347,7 @@ function ProductDetailView({ id }: { id: string }) {
               </div>
             </div>
 
-            <p className="text-3xl font-semibold text-black">${product.price.toFixed(2)}</p>
+            <p className="text-3xl font-semibold text-black">{formatLKR(product.price)}</p>
 
             <div className="flex flex-col gap-2 rounded-2xl border border-border bg-white p-4">
               <div className="flex items-center gap-2 text-sm text-black">

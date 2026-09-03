@@ -16,6 +16,7 @@ import {
   TrashIcon,
 } from "@/components/icons";
 import { Stepper } from "@/components/checkout/Stepper";
+import { formatLKR } from "@/lib/currency";
 
 type WeightClass = "Standard" | "Heavy";
 type IconKey = "phone" | "headphones" | "camera" | "earbuds" | "purifier" | "coffee";
@@ -50,9 +51,9 @@ function iconKeyForName(name: string): IconKey {
   return "coffee";
 }
 
-const DELIVERY_FEE = 4.99;
-const HEAVY_SURCHARGE = 6.0;
-const FREE_DELIVERY_THRESHOLD = 150;
+const DELIVERY_FEE = 1497;
+const HEAVY_SURCHARGE = 1800;
+const FREE_DELIVERY_THRESHOLD = 45000;
 
 function QuantityStepper({
   quantity,
@@ -130,8 +131,8 @@ function CartRow({
           max={item.stock}
           onChange={(next) => onQuantityChange(item.id, next)}
         />
-        <p className="w-16 shrink-0 text-right text-sm font-semibold text-black sm:w-20">
-          ${(item.price * item.quantity).toFixed(2)}
+        <p className="w-24 shrink-0 text-right text-sm font-semibold text-black sm:w-28">
+          {formatLKR(item.price * item.quantity)}
         </p>
         <button
           onClick={() => onRemove(item.id)}
@@ -239,7 +240,7 @@ export default function CartPage() {
             <div className="flex flex-1 flex-col gap-4">
               {!qualifiesFreeDelivery && (
                 <div className="rounded-xl bg-charcoal/5 px-4 py-3 text-xs font-medium text-charcoal">
-                  Add ${remainingForFreeDelivery.toFixed(2)} more to unlock free delivery.
+                  Add {formatLKR(remainingForFreeDelivery)} more to unlock free delivery.
                 </div>
               )}
               {items.map((item) => (
@@ -258,17 +259,17 @@ export default function CartPage() {
               <div className="mt-4 flex flex-col gap-2 text-sm">
                 <div className="flex items-center justify-between text-slate">
                   <span>Subtotal</span>
-                  <span className="text-black">${subtotal.toFixed(2)}</span>
+                  <span className="text-black">{formatLKR(subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between text-slate">
                   <span>Delivery fee</span>
                   <span className={qualifiesFreeDelivery && !hasHeavyItem ? "text-charcoal" : "text-black"}>
-                    {deliveryFee === 0 ? "Free" : `$${deliveryFee.toFixed(2)}`}
+                    {deliveryFee === 0 ? "Free" : formatLKR(deliveryFee)}
                   </span>
                 </div>
                 {hasHeavyItem && (
                   <p className="text-[11px] text-muted">
-                    Includes ${HEAVY_SURCHARGE.toFixed(2)} heavy-item surcharge.
+                    Includes {formatLKR(HEAVY_SURCHARGE)} heavy-item surcharge.
                   </p>
                 )}
                 {slowestEta > 0 && (
@@ -295,7 +296,7 @@ export default function CartPage() {
 
               <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-base font-semibold text-black">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatLKR(total)}</span>
               </div>
 
               <Link

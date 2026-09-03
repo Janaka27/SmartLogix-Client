@@ -20,6 +20,7 @@ import {
 } from "@/components/icons";
 import { CHECKOUT_STEPS, Stepper } from "@/components/checkout/Stepper";
 import { CardPaymentForm } from "@/components/checkout/CardPaymentForm";
+import { formatLKR } from "@/lib/currency";
 
 type PaymentMethod = "card" | "cod";
 type RangeStatus = "unchecked" | "checking" | "in-range" | "out-of-range";
@@ -41,10 +42,10 @@ interface OrderItem {
   icon: ProductIcon;
 }
 
-const DELIVERY_FEE = 4.99;
-const HEAVY_SURCHARGE = 6.0;
+const DELIVERY_FEE = 1497;
+const HEAVY_SURCHARGE = 1800;
 const HEAVY_THRESHOLD_KG = 5;
-const URGENT_DELIVERY_FEE = 9.99;
+const URGENT_DELIVERY_FEE = 2997;
 
 function SectionCard({
   icon,
@@ -437,7 +438,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="text-sm font-semibold text-black">
-                    +${URGENT_DELIVERY_FEE.toFixed(2)}
+                    +{formatLKR(URGENT_DELIVERY_FEE)}
                   </span>
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded-full border ${
@@ -511,7 +512,7 @@ export default function CheckoutPage() {
                       <p className="text-[11px] text-muted">Qty {item.quantity}</p>
                     </div>
                     <p className="shrink-0 text-xs font-semibold text-black">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {formatLKR(item.price * item.quantity)}
                     </p>
                   </div>
                 );
@@ -521,23 +522,23 @@ export default function CheckoutPage() {
             <div className="mt-4 flex flex-col gap-2 text-sm">
               <div className="flex items-center justify-between text-slate">
                 <span>Subtotal</span>
-                <span className="text-black">${subtotal.toFixed(2)}</span>
+                <span className="text-black">{formatLKR(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-slate">
                 <span>Delivery fee</span>
-                <span className="text-black">${deliveryFee.toFixed(2)}</span>
+                <span className="text-black">{formatLKR(deliveryFee)}</span>
               </div>
               {urgentDelivery && (
                 <div className="flex items-center justify-between text-slate">
                   <span>Urgent delivery</span>
-                  <span className="text-black">${urgentFee.toFixed(2)}</span>
+                  <span className="text-black">{formatLKR(urgentFee)}</span>
                 </div>
               )}
             </div>
 
             <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-base font-semibold text-black">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>{formatLKR(total)}</span>
             </div>
 
             {orderError && (

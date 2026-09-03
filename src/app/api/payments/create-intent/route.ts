@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
   const intent = await stripe.paymentIntents.create({
     amount,
-    currency: "usd",
+    currency: "lkr",
     metadata: { order_id: order.id, buyer_id: user.id },
     automatic_payment_methods: { enabled: true },
   });
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     order_id: order.id,
     stripe_payment_intent_id: intent.id,
     amount: amount / 100,
-    currency: "usd",
+    currency: "lkr",
     status: "requires_payment_method",
   });
 

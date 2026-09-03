@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AuthService } from "@/server/services/auth.service";
 import { ProductService } from "@/server/services/product.service";
 import { type DisplayProduct } from "@/lib/products";
+import { formatLKR } from "@/lib/currency";
 import { CartIcon, DroneIcon, SearchIcon } from "@/components/icons";
 
 type IconKey = "phone" | "headphones" | "earbuds" | "camera" | "purifier" | "coffee";
@@ -202,7 +203,7 @@ export default function SearchPage() {
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="text-sm font-semibold text-black">{product.name}</h3>
                         <span className="shrink-0 text-sm font-semibold text-black">
-                          ${product.price.toFixed(2)}
+                          {formatLKR(product.price)}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted">
