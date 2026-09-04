@@ -14,6 +14,9 @@ working from the same picture.
 - Supabase — Realtime is used for live drone position updates during delivery tracking
 - Route Optimization module — computes distance/ETA from the nearest in-stock warehouse (Dijkstra over a
   warehouse/drone-range graph)
+- Batch Delivery Route module (src/lib/dsa/simulated-annealing.ts) — orders a single drone's multi-stop
+  trip (depot + delivery stops, closed loop) with Simulated Annealing over a circularly linked list;
+  implemented and benchmarked standalone, not yet called from any page
 
 The codebase is currently a fresh `create-next-app` scaffold (`app/`, no feature code yet). Update this
 section as real structure (routes, data layer, modules) lands.
